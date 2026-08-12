@@ -1,4 +1,4 @@
-{ config, lib, pkgs, p-skills, ... }:
+{ config, lib, pkgs, ... }:
 
 # ============================================================
 # pi 插件 / 扩展 / MCP / LSP 声明式管理
@@ -25,16 +25,6 @@ let
     "npm:pi-cache-optimizer"      # 缓存优化
     "npm:pi-rtk-optimizer"        # RTK 优化
     "npm:pi-hashline-edit-pro"    # hash 行编辑
-  ];
-
-  # p-skills（自有 agent-skills 仓库）：目录结构与 p-skills/skills/ 一致
-  # （core 直接平铺，optional 在 skills/optional/ 下）
-  pSkillsCore = [
-    "fix-bug" "github-flow" "grill-me" "retrospective"
-    "subagent-driven-development" "tdd" "verify" "writing-plans" "writing-skills"
-  ];
-  pSkillsOptional = [
-    "openspec" "security-integrate" "security-poc" "security-research"
   ];
 
   # pi 全局设置（对应原 ~/.pi/agent/settings.json）
@@ -152,13 +142,5 @@ in
     ".pi/agent/extensions" = {
       source = ./pi-extensions;
     };
-  }
-  // builtins.listToAttrs (map (name: {
-    name = ".pi/agent/skills/${name}";
-    value.source = "${p-skills}/skills/${name}";
-  }) pSkillsCore)
-  // builtins.listToAttrs (map (name: {
-    name = ".pi/agent/skills/${name}";
-    value.source = "${p-skills}/skills/optional/${name}";
-  }) pSkillsOptional);
+  };
 }

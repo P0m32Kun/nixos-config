@@ -112,22 +112,6 @@
         "type": "github"
       }
     },
-    "p-skills": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1781670424,
-        "narHash": "sha256-nf05qJAgejqn1A2v4Ao6WiIr1BXGzXOAGAq902SmVq4=",
-        "owner": "P0m32Kun",
-        "repo": "p-skills",
-        "rev": "9161cd81134838b19dd853d051baf08ec9d1a9d6",
-        "type": "github"
-      },
-      "original": {
-        "owner": "P0m32Kun",
-        "repo": "p-skills",
-        "type": "github"
-      }
-    },
     "pyproject-build-systems": {
       "inputs": {
         "nixpkgs": [
@@ -183,8 +167,7 @@
         "hermes-agent": "hermes-agent",
         "home-manager": "home-manager",
         "nixpkgs": "nixpkgs",
-        "nixpkgs-unstable": "nixpkgs-unstable",
-        "p-skills": "p-skills"
+        "nixpkgs-unstable": "nixpkgs-unstable"
       }
     },
     "uv2nix": {

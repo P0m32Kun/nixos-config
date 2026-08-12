@@ -39,10 +39,11 @@ modules/                      # 系统级 NixOS 模块
   desktop/hyprland.nix        # Hyprland 桌面（SDDM/fcitx5/字体，替代原 gnome.nix）
 home/
   default.nix                 # 用户级模块入口（imports 注册处）
-  pi.nix                      # pi 插件/MCP/LSP 声明 + p-skills 技能 symlink
+  pi.nix                      # pi 插件/MCP/LSP 声明
   packages.nix                # 用户级软件包（含 hermes-agent）
   hyprland.nix                # Hyprland dotfiles（waybar/rofi/awww/hyprlock...）
   apps.nix                    # Alacritty / Helix / Fish / Yazi / uv / Obsidian
+  agent-skills.nix            # agent-skills 技能平台（out-of-store 链接 + 同步函数）
   pi-extensions/              # 自写 pi 扩展源码
 hosts/<host>/                 # 每台机器的本机配置
 ```
@@ -52,3 +53,10 @@ hosts/<host>/                 # 每台机器的本机配置
 - 系统级：`modules/desktop/hyprland.nix`（合成器、SDDM、输入法、字体、portal）
 - 用户级 dotfiles 一律在 `home/hyprland.nix` 的 `home.file` 里声明，禁止手改 `~/.config`
 - 改完配置 = `nix flake lock`（仅当输入变了）+ `sudo nixos-rebuild switch --flake /etc/nixos`
+
+## agent-skills 约定
+
+- 私有仓库，不走 flake 输入：clone 到 `~/.local/share/agent-skills`（`git pull` 更新），依赖 `npm ci`
+- 真实文件在 `~/.local/state/agent-skills/`（CLI 可写），home-manager 只声明 out-of-store 符号链接
+- 日常同步：`agent-skills-sync`（只读检查）→ `APPLY=1 agent-skills-sync`（写入策略）
+- 详见 `home/agent-skills.nix` 文件头与仓库 `docs/nixos.md`

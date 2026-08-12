@@ -29,15 +29,11 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
-    # 自有的 p-skills 技能仓库（agent-skills）：符号链接进 ~/.pi/agent/skills/
-    # flake = false：仓库本身没有 flake.nix，只作为纯路径输入使用
-    p-skills = {
-      url = "github:P0m32Kun/p-skills";
-      flake = false;
-    };
+    # 自有的 agent-skills 技能平台：私有仓库，不走 flake 输入
+    # （见 home/agent-skills.nix：git clone 到 ~/.local/share/agent-skills）
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, hermes-agent, p-skills, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, hermes-agent, ... }:
     let
       system = "x86_64-linux";
       # unstable nixpkgs 的包集合，通过 specialArgs 传给模块
@@ -56,7 +52,7 @@
       # 主机名是 "nixos"（见 hosts/nixos/default.nix 的 networking.hostName）
       nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = { inherit pkgsUnstable p-skills; };
+        specialArgs = { inherit pkgsUnstable; };
         modules = [
           # 自定义包 overlay（新版 nixpkgs 用模块选项，而非 nixosSystem 顶层参数）
           { nixpkgs.overlays = overlays; }
@@ -69,8 +65,7 @@
             home-manager = {
               useGlobalPkgs = true;
               useUserPackages = true;
-              # extraSpecialArgs 让 home 模块能拿到 p-skills 输入（symlink 技能用）
-              extraSpecialArgs = { inherit p-skills; };
+              # （agent-skills 不走输入，见 home/agent-skills.nix）
               users.kun = import ./home;
             };
           }

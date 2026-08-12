@@ -27,10 +27,11 @@ nixos-config/
 │       └── kun.nix              #   用户 kun（shell = fish）
 ├── home/                        # home-manager 用户级配置
 │   ├── default.nix              #   入口（imports 注册处）
-│   ├── pi.nix                   #   pi 插件/MCP/LSP + p-skills 技能
+│   ├── pi.nix                   #   pi 插件/MCP/LSP 声明
 │   ├── packages.nix             #   用户级软件包（含 hermes-agent）
 │   ├── hyprland.nix             #   Hyprland dotfiles（waybar/rofi/awww/hyprlock...）
 │   ├── apps.nix                 #   Alacritty / Helix / Fish / Yazi / uv / Obsidian
+│   ├── agent-skills.nix         #   agent-skills 技能平台（out-of-store 链接）
 │   └── pi-extensions/           #   自写 pi 扩展
 ├── rebuild.sh                   # 一键重建脚本
 └── README.md
