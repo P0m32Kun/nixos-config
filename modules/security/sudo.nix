@@ -14,7 +14,13 @@
       users = [ "kun" ];
       commands = [
         {
-          command = "${pkgs.nixos-rebuild}/bin/nixos-rebuild";
+          # 必须写 /run/current-system/sw/bin/nixos-rebuild 这个稳定路径，
+          # 不能写 ${pkgs.nixos-rebuild} 的 store 路径：
+          # sudo 按字面路径匹配（不解析符号链接），裸命令 `sudo nixos-rebuild`
+          # 经 secure_path 解析到的正是 /run/current-system/sw/bin/nixos-rebuild
+          #（软链，每个 generation 都指向当次构建的 nixos-rebuild）。
+          # 该二进制由 NixOS 系统默认包提供，稳定存在于每个 generation。
+          command = "/run/current-system/sw/bin/nixos-rebuild";
           options = [ "NOPASSWD" ];
         }
       ];
