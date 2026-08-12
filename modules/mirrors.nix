@@ -18,6 +18,17 @@
     auto-optimise-store = true;
   };
 
+  # ============ 网络代理（本机 127.0.0.1:7892） ============
+  # 让 nix-daemon 的源码下载（github tarball、PyPI 等）走代理；
+  # 国内镜像（TUNA）保持直连（no_proxy）。
+  # 没有代理时删掉这个 block 即可。
+  systemd.services.nix-daemon.environment = {
+    https_proxy = "http://127.0.0.1:7892";
+    http_proxy = "http://127.0.0.1:7892";
+    all_proxy = "http://127.0.0.1:7892";
+    no_proxy = "localhost,127.0.0.1,mirrors.tuna.tsinghua.edu.cn";
+  };
+
   # 换中科大 USTC：把 substituters 第一条改为
   #   "https://mirrors.ustc.edu.cn/nix-channels/store"
   # （nixpkgs 源在 flake.nix 中同步修改）

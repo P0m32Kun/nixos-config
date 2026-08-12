@@ -16,11 +16,22 @@ nixos-config/
 │   ├── base.nix                 #   时区 / 中文 / 网络 / SSH / 打印
 │   ├── mirrors.nix              #   国内镜像（TUNA）
 │   ├── packages.nix             #   系统软件包 + 允许 unfree
+├── modules/                     # 可复用的功能模块
+│   ├── base.nix                 #   时区 / 中文 / 网络 / SSH / 打印
+│   ├── mirrors.nix              #   国内镜像（TUNA）
+│   ├── packages.nix             #   系统软件包 + 允许 unfree
 │   ├── desktop/
-│   │   ├── gnome.nix            #   GNOME 桌面 + 键盘布局 + Firefox
+│   │   ├── hyprland.nix         #   Hyprland 桌面（SDDM / fcitx5 / 字体 / portal）
 │   │   └── audio.nix            #   PipeWire 声音
 │   └── users/
-│       └── kun.nix              #   用户 kun
+│       └── kun.nix              #   用户 kun（shell = fish）
+├── home/                        # home-manager 用户级配置
+│   ├── default.nix              #   入口（imports 注册处）
+│   ├── pi.nix                   #   pi 插件/MCP/LSP + p-skills 技能
+│   ├── packages.nix             #   用户级软件包（含 hermes-agent）
+│   ├── hyprland.nix             #   Hyprland dotfiles（waybar/rofi/awww/hyprlock...）
+│   ├── apps.nix                 #   Alacritty / Helix / Fish / Yazi / uv / Obsidian
+│   └── pi-extensions/           #   自写 pi 扩展
 ├── rebuild.sh                   # 一键重建脚本
 └── README.md
 ```

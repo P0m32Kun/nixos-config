@@ -15,5 +15,7 @@
     # 从 unstable nixpkgs 取最新版（stable 里只有 0.75.4）
     pkgsUnstable.pi-coding-agent
     codex
+    # pi 安装 npm/git 插件时要调用系统 npm（pi 自身只捆绑了 node 运行时）
+    nodejs
   ];
 }

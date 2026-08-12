@@ -9,9 +9,10 @@
     ../../modules/base.nix          # 时区 / 语言 / 网络 / SSH / 打印
     ../../modules/mirrors.nix       # 国内镜像
     ../../modules/packages.nix      # 软件包
-    ../../modules/desktop/gnome.nix # 桌面环境
+    ../../modules/desktop/hyprland.nix # 桌面环境（Hyprland，原 GNOME）
     ../../modules/desktop/audio.nix # 声音
     ../../modules/users/kun.nix     # 用户
+    ../../modules/virtualization.nix # VMware / KVM / Podman
 
     # 新机器迁移时：删掉上面"本机特有配置"下不需要的部分即可
   ];
