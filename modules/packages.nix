@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, pkgsUnstable, ... }:
 
 {
   # ============ 允许非自由软件 ============
@@ -12,7 +12,8 @@
     neovim # 编辑器
     wget
     curl
-    pi-coding-agent
+    # 从 unstable nixpkgs 取最新版（stable 里只有 0.75.4）
+    pkgsUnstable.pi-coding-agent
     codex
   ];
 }
