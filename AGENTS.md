@@ -33,7 +33,7 @@
 ## 仓库结构速览
 
 ```
-flake.nix                     # 输入 + nixosSystem（home-manager、overlays、hermes-agent/p-skills）
+flake.nix                     # 输入 + nixosSystem（home-manager、overlays、hermes-agent）
 overlays/                     # 不在 nixpkgs 的自定义包（每个工具一个文件）
 modules/                      # 系统级 NixOS 模块
   desktop/hyprland.nix        # Hyprland 桌面（SDDM/fcitx5/字体，替代原 gnome.nix）
