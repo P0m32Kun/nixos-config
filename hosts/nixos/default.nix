@@ -26,4 +26,8 @@
 
   # 主机名
   networking.hostName = "nixos";
+
+  # 系统状态版本：从哪个 NixOS 版本开始保持默认状态设置
+  # 不要随意改动（只在跨大版本升级时按官方指引修改）
+  system.stateVersion = "26.05";
 }
