@@ -14,13 +14,10 @@
       system = "x86_64-linux";
     in
     {
-      # 主机名是 "nixos"（对应 configuration.nix 中的 networking.hostName）
+      # 主机名是 "nixos"（见 hosts/nixos/default.nix 的 networking.hostName）
       nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
         inherit system;
-        modules = [
-          ./configuration.nix
-          ./hardware-configuration.nix
-        ];
+        modules = [ ./hosts/nixos ];
       };
     };
 }
