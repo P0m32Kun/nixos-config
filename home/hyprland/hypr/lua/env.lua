@@ -1,0 +1,17 @@
+hl.env("GTK_THEME", "Dracula")
+hl.env("GTK_ICON_THEME", "dracula")
+hl.env("XCURSOR_THEME", "Bibata-Modern-Ice")
+hl.env("HYPRCURSOR_THEME", "Bibata-Modern-Ice")
+hl.env("XCURSOR_SIZE", "24")
+hl.env("HYPRCURSOR_SIZE", "24")
+hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
+hl.env("XDG_SESSION_DESKTOP", "Hyprland")
+hl.env("XDG_SESSION_TYPE", "wayland")
+-- 输入法（fcitx5）Wayland 下仍需这些变量
+hl.env("GTK_IM_MODULE", "fcitx")
+hl.env("QT_IM_MODULE", "fcitx")
+hl.env("XMODIFIERS", "@im=fcitx")
+-- Electron 应用（obsidian 等）Wayland 原生运行
+hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
+hl.env("EDITOR", "hx")
+hl.env("VISUAL", "hx")

@@ -1,6 +1,12 @@
 {
   description = "NixOS 配置（国内镜像 + GitHub 管理）";
 
+  # noctalia 官方 Cachix 二进制缓存（避免本地编译 C++ 项目）
+  nixConfig = {
+    extra-substituters = [ "https://noctalia.cachix.org" ];
+    extra-trusted-public-keys = [ "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=" ];
+  };
+
   inputs = {
     # 使用清华 TUNA 镜像的 nixpkgs（国内拉取速度快）
     # 可选替代：
@@ -29,11 +35,19 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
+    # noctalia v5（C++ 版，官方当前推荐版本；nixpkgs 里的 noctalia-shell 是
+    # v4 Quickshell 旧版，配置不兼容）。用官方 cachix 分支保证二进制缓存命中，
+    # 避免本地编译整个 C++ 项目。**不要**加 inputs.nixpkgs.follows，
+    # 否则 derivation 改变会导致缓存 miss（见官方文档）。
+    noctalia = {
+      url = "github:noctalia-dev/noctalia/cachix";
+    };
+
     # 自有的 agent-skills 技能平台：私有仓库，不走 flake 输入
     # （见 home/agent-skills.nix：git clone 到 ~/.local/share/agent-skills）
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, hermes-agent, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, hermes-agent, noctalia, ... }@inputs:
     let
       system = "x86_64-linux";
       # unstable nixpkgs 的包集合，通过 specialArgs 传给模块
@@ -43,6 +57,7 @@
       overlays = [
         (import ./overlays/pi-tools.nix)
         (import ./overlays/rtk.nix)
+        (import ./overlays/herdr.nix)
         # hermes-agent 官方 overlay：pkgs.hermes-agent = 其 flake 的 default 包
         # （纯别名，构建用 hermes 自己锁定的 nixpkgs-unstable + uv2nix）
         hermes-agent.overlays.default
@@ -67,6 +82,8 @@
               useUserPackages = true;
               # （agent-skills 不走输入，见 home/agent-skills.nix）
               users.kun = import ./home;
+              # 把 flake inputs 传给 home 模块（hyprland.nix 需要 noctalia）
+              extraSpecialArgs = { inherit inputs; };
             };
           }
         ];

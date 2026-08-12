@@ -30,6 +30,8 @@
     typescript             # ✅ 直接在顶层
     pkg-config       # 帮助找依赖库
 
+    # ---- herdr（AI agent 终端工作区管理器，overlay 打包）----
+    herdr
     # ---- hermes-agent（Nous Research AI agent）----
     # 来自 flake 输入 hermes-agent 的 overlay（官方 nix-setup 文档方案）。
     # 首次构建较久（uv2nix 打包全部 Python 依赖，~700MB closure）。

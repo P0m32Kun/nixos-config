@@ -8,10 +8,13 @@
     substituters = [
       "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
       "https://cache.nixos.org"
+      # noctalia 官方 Cachix（v5 C++ 版，避免本地编译）
+      "https://noctalia.cachix.org"
     ];
     # TUNA 镜像代理的是官方缓存，使用官方密钥即可
     trusted-public-keys = [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
     ];
     # 启用 flakes 与 nix 命令（GitHub 管理配置的基础）
     experimental-features = [ "nix-command" "flakes" ];

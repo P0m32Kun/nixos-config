@@ -1,0 +1,8 @@
+-- 本机（笔记本 eDP-1）：不写死显示器，交给 Hyprland 自动检测。
+-- 如需固定，取消注释并按需修改：
+-- hl.monitor({
+--   output = "eDP-1",
+--   mode = "preferred",
+--   position = "auto",
+--   scale = "1",
+-- })

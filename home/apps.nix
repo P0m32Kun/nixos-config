@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 # ============================================================
-# 用户应用：Alacritty + Helix + Fish + Yazi + uv + Obsidian
+# 用户应用：Alacritty + Starship + Fish + Yazi + uv + Obsidian
 # 全部通过 home-manager 模块声明式配置，随系统一起 rebuild
 # ============================================================
 {
@@ -70,29 +70,6 @@
     };
   };
 
-  # ============ Helix（编辑器） ============
-  programs.helix = {
-    enable = true;
-    settings = {
-      theme = "catppuccin_mocha";
-      editor = {
-        line-number = "relative";
-        cursorline = true;
-        color-modes = true;
-        true-color = true;
-        bufferline = "multiple";
-        lsp.display-messages = true;
-        auto-save = true;
-      };
-      keys.normal = {
-        # 空格 = 前缀，习惯与终端一致
-        space.space = "file_picker";
-        space.w = "save";
-        space.q = "quit";
-      };
-    };
-  };
-
   # ============ Fish（shell） ============
   programs.fish = {
     enable = true;
@@ -100,8 +77,8 @@
       # 关闭欢迎语
       set -g fish_greeting
       # 编辑器
-      set -gx EDITOR hx
-      set -gx VISUAL hx
+      set -gx EDITOR nvim
+      set -gx VISUAL nvim
     '';
     interactiveShellInit = ''
       # 别名
@@ -115,36 +92,75 @@
       # nix 商店 GC
       alias gc 'nix-collect-garbage -d'
     '';
-    functions = {
-      fish_prompt = {
-        body = ''
-          # 精简提示符：用户@主机 路径 分支（git）>
-          set -l last_status $status
-          set -l cyan (set_color cyan)
-          set -l blue (set_color blue)
-          set -l green (set_color green)
-          set -l red (set_color red)
-          set -l normal (set_color normal)
+  };
 
-          echo -n -s $blue (prompt_pwd) ' '
+  # ============ Starship（提示符） ============
+  # 取代原 fish_prompt；fish 集成由 home-manager 自动注入 `starship init fish`
+  programs.starship = {
+    enable = true;
+    settings = {
+      palette = "catppuccin_mocha";
 
-          # git 分支
-          if git rev-parse --is-inside-work-tree >/dev/null 2>&1
-              set -l branch (git branch --show-current 2>/dev/null; or git rev-parse --short HEAD)
-              set -l dirty (git status --porcelain 2>/dev/null | wc -l)
-              if test $dirty -gt 0
-                  echo -n -s $red '±' $branch ' '
-              else
-                  echo -n -s $green $branch ' '
-              end
-          end
+      palettes.catppuccin_mocha = {
+        rosewater = "#f5e0dc";
+        flamingo = "#f2cdcd";
+        pink = "#f5c2e7";
+        mauve = "#cba6f7";
+        red = "#f38ba8";
+        maroon = "#eba0ac";
+        peach = "#fab387";
+        yellow = "#f9e2af";
+        green = "#a6e3a1";
+        teal = "#94e2d5";
+        sky = "#89dceb";
+        sapphire = "#74c7ec";
+        blue = "#89b4fa";
+        lavender = "#b4befe";
+        text = "#cdd6f4";
+        subtext1 = "#bac2de";
+        subtext0 = "#a6adc8";
+        overlay2 = "#9399b2";
+        overlay1 = "#7f849c";
+        overlay0 = "#6c7086";
+        surface2 = "#585b70";
+        surface1 = "#45475a";
+        surface0 = "#313244";
+        base = "#1e1e2e";
+        mantle = "#181825";
+        crust = "#11111b";
+      };
 
-          if test $last_status -ne 0
-              echo -n -s $red '✗ '
-          end
+      character = {
+        success_symbol = "[❯](bold green)";
+        error_symbol = "[❯](bold red)";
+      };
 
-          echo -n -s $cyan '❯ ' $normal
-        '';
+      directory = {
+        style = "blue";
+      };
+
+      git_branch = {
+        style = "green";
+      };
+
+      git_status = {
+        style = "red";
+      };
+
+      cmd_duration = {
+        style = "yellow";
+      };
+
+      python = {
+        style = "peach";
+      };
+
+      nodejs = {
+        style = "green";
+      };
+
+      rust = {
+        style = "maroon";
       };
     };
   };

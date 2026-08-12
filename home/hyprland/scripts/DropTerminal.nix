@@ -1,0 +1,580 @@
+{pkgs}:
+pkgs.writeShellScriptBin "DropTerminal" ''
+  #!/usr/bin/env bash
+  # Dropdown Terminal for Hyprland (Nix-managed)
+  # Source: adapted from Dropterminal.sh by Kiran George (SherLock707)
+  # Usage:
+  #   DropTerminal [-d] [<terminal_command>]
+  # Behavior:
+  #   - If <terminal_command> is omitted, uses $TERM, with fallback to alacritty when $TERM is unset/empty
+
+  set -euo pipefail
+
+  DEBUG=false
+  # Use a dedicated special workspace so preload never flashes on screen
+  SPECIAL_WS="special:dropterminal"
+  ADDR_FILE="/tmp/dropdown_terminal_addr"
+  STATE_FILE="/tmp/dropdown_terminal_state"
+  LOCK_FILE="/tmp/dropdown_terminal_lock"
+  LAST_TOGGLE_FILE="/tmp/dropdown_terminal_last_toggle"
+  MIN_TOGGLE_INTERVAL_MS=250
+  SPAWN_ONLY=false  # if true, just create hidden in scratchpad and exit
+  DROPDOWN_CLASS="alacritty-dropterm"
+
+  # Sanitize Hyprland JSON to strict JSON (work around NaN/Inf issues)
+  hyprjson() {
+    # Usage: hyprjson <hyprctl subcommand...>
+    # Emits strict JSON, replacing invalid numeric literals with null
+    hyprctl "$@" -j 2>/dev/null | sed -E 's/: *nan([,}])/ : null\1/gi; s/: *-nan([,}])/ : null\1/gi; s/: *inf([,}])/ : null\1/gi; s/: *-inf([,}])/ : null\1/gi'
+  }
+
+  # Dropdown size and position configuration (percentages)
+  WIDTH_PERCENT=65  # Width as percentage of screen width
+  HEIGHT_PERCENT=65 # Height as percentage of screen height
+  Y_PERCENT=10      # Y position as percentage from top (X is auto-centered)
+
+  # Animation settings
+  ANIMATION_DURATION=100 # milliseconds
+  SLIDE_STEPS=5
+  SLIDE_DELAY=5 # milliseconds between steps
+
+  # Parse arguments
+  if [ "''${1-}" = "-d" ] || [ "''${1-}" = "--debug" ]; then
+    DEBUG=true
+    shift || true
+  fi
+  if [ "''${1-}" = "-S" ] || [ "''${1-}" = "--spawn-only" ]; then
+    SPAWN_ONLY=true
+    shift || true
+  fi
+  # Env override for startup usage
+  if [ "''${DROPTERM_SPAWN_ONLY-}" = "1" ]; then
+    SPAWN_ONLY=true
+  fi
+
+  # Terminal command: prefer explicit arg; otherwise always use alacritty
+  TERMINAL_CMD="''${1-}"
+  if [ -z "''${TERMINAL_CMD}" ]; then
+    TERMINAL_CMD="alacritty"
+  fi
+  if [[ "$TERMINAL_CMD" == alacritty* ]] && [[ "$TERMINAL_CMD" != *"--class"* ]] && [[ "$TERMINAL_CMD" != *"--name"* ]] && [[ "$TERMINAL_CMD" != *"--app-id"* ]]; then
+    TERMINAL_CMD="$TERMINAL_CMD --class $DROPDOWN_CLASS"
+  fi
+
+  if [ "$DEBUG" = true ]; then
+    echo "DropTerminal start (debug enabled)" >&2
+  fi
+
+  # Ensure only one instance runs at a time (prevents overlapping animations)
+  exec 9>"$LOCK_FILE"
+  if ! ${pkgs.util-linux}/bin/flock -n 9; then
+    if [ "$DEBUG" = true ]; then
+      echo "DropTerminal: lock held, exiting" >&2
+    fi
+    exit 0
+  fi
+
+  # Debounce rapid toggles
+  now_ms=""
+  if ${pkgs.coreutils}/bin/date +%s%3N >/dev/null 2>&1; then
+    now_ms=$(${pkgs.coreutils}/bin/date +%s%3N)
+  else
+    now_ms=$(( $(${pkgs.coreutils}/bin/date +%s) * 1000 ))
+  fi
+  if [ -f "$LAST_TOGGLE_FILE" ]; then
+    last_ms=$(cat "$LAST_TOGGLE_FILE" 2>/dev/null || echo 0)
+    if [ -n "$last_ms" ] && [ "$last_ms" -ge 0 ] 2>/dev/null; then
+      delta_ms=$((now_ms - last_ms))
+      if [ "$delta_ms" -lt "$MIN_TOGGLE_INTERVAL_MS" ] 2>/dev/null; then
+        if [ "$DEBUG" = true ]; then
+          echo "Toggle debounced (''${delta_ms}ms < ''${MIN_TOGGLE_INTERVAL_MS}ms)" >&2
+        fi
+        exit 0
+      fi
+    fi
+  fi
+  echo "$now_ms" >"$LAST_TOGGLE_FILE"
+
+  # Debug echo function
+  debug_echo() {
+    if [ "$DEBUG" = true ]; then
+      echo "$@"
+    fi
+  }
+
+  # Wait until Hyprland returns sane JSON (monitors/workspace ready)
+  wait_for_hypr() {
+    for i in $(seq 1 60); do
+      if hyprjson monitors | ${pkgs.jq}/bin/jq -e 'length > 0' >/dev/null 2>&1 \
+         && hyprjson activeworkspace | ${pkgs.jq}/bin/jq -e '.id | numbers' >/dev/null 2>&1; then
+        return 0
+      fi
+      sleep 0.05
+    done
+    return 0
+  }
+
+  # Function to get window geometry
+  get_window_geometry() {
+    local addr="$1"
+    hyprjson clients | ${pkgs.jq}/bin/jq -r --arg ADDR "$addr" '.[] | select(.address == $ADDR) | "\(.at[0]) \(.at[1]) \(.size[0]) \(.size[1])"'
+  }
+
+  # Function to check if window is currently hidden off-screen
+  window_is_hidden() {
+    local addr="$1"
+    local y
+    y=$(hyprjson clients | ${pkgs.jq}/bin/jq -r --arg ADDR "$addr" '.[] | select(.address == $ADDR) | .at[1]' 2>/dev/null)
+    if [[ "$y" =~ ^-?[0-9]+$ ]] && [ "$y" -lt 0 ]; then
+      return 0
+    fi
+    return 1
+  }
+
+  # State helpers
+  get_hidden_state() {
+    if [ -f "$STATE_FILE" ]; then
+      cat "$STATE_FILE" 2>/dev/null
+    fi
+  }
+
+  set_hidden_state() {
+    echo "$1" >"$STATE_FILE"
+  }
+
+  # Ensure a window is floating
+  ensure_floating() {
+    local addr="$1"
+    local is_float=$(hyprjson clients | ${pkgs.jq}/bin/jq -r --arg ADDR "$addr" '.[] | select(.address == $ADDR) | .floating // false')
+    if [ "$is_float" != "true" ]; then
+      hyprctl dispatch togglefloating "address:$addr" >/dev/null 2>&1 || true
+      sleep 0.02
+    fi
+  }
+
+  # Function to animate window slide down (show)
+  animate_slide_down() {
+    local addr="$1"
+    local target_x="$2"
+    local target_y="$3"
+    local width="$4"
+    local height="$5"
+
+    debug_echo "Animating slide down for window $addr to position $target_x,$target_y"
+
+    # Start position (above screen)
+    local start_y=$((target_y - height - 50))
+
+    # Calculate step size
+    local step_y=$(((target_y - start_y) / SLIDE_STEPS))
+
+    # Move window to start position instantly (off-screen)
+    hyprctl dispatch movewindowpixel "exact $target_x $start_y,address:$addr" >/dev/null 2>&1
+    sleep 0.05
+
+    # Animate slide down
+    for i in $(seq 1 $SLIDE_STEPS); do
+      local current_y=$((start_y + (step_y * i)))
+      hyprctl dispatch movewindowpixel "exact $target_x $current_y,address:$addr" >/dev/null 2>&1
+      sleep 0.03
+    done
+
+    # Ensure final position is exact
+    hyprctl dispatch movewindowpixel "exact $target_x $target_y,address:$addr" >/dev/null 2>&1
+  }
+
+  # Function to animate window slide up (hide)
+  animate_slide_up() {
+    local addr="$1"
+    local start_x="$2"
+    local start_y="$3"
+    local width="$4"
+    local height="$5"
+
+    debug_echo "Animating slide up for window $addr from position $start_x,$start_y"
+
+    # End position (above screen)
+    local end_y=$((start_y - height - 50))
+
+    # Calculate step size
+    local step_y=$(((start_y - end_y) / SLIDE_STEPS))
+
+    # Animate slide up
+    for i in $(seq 1 $SLIDE_STEPS); do
+      local current_y=$((start_y - (step_y * i)))
+      hyprctl dispatch movewindowpixel "exact $start_x $current_y,address:$addr" >/dev/null 2>&1
+      sleep 0.03
+    done
+
+    debug_echo "Slide up animation completed"
+  }
+
+  # Function to get monitor info including scale and name of focused monitor
+  get_monitor_info() {
+    local monitor_data
+    monitor_data=$(hyprjson monitors | ${pkgs.jq}/bin/jq -er 'map(select(.focused == true)) | .[0] | "\(.x) \(.y) \(.width) \(.height) \(.scale // 1) \(.name)"' 2>/dev/null) || monitor_data=""
+    if [ -z "$monitor_data" ]; then
+      # Fallback for older Hyprland without -j support or bad JSON
+      monitor_data=$(hyprctl monitors 2>/dev/null | awk '
+        /^Monitor / {name=$2; sub(/\(.*/, "", name); x=y=w=h=scale=""; focused="no"}
+        / at / {
+          # e.g. "1920x1080@74.97300 at 0x0"
+          split($1, res, "x"); w=res[1]; split(res[2], tmp, "@"); h=tmp[1]
+          split($4, pos, "x"); x=pos[1]; y=pos[2]
+        }
+        /scale:/ {scale=$2}
+        /focused:/ {focused=$2}
+        /^$/ {
+          if (focused=="yes" && x!="" && y!="" && w!="" && h!="" && scale!="" && name!="") {
+            print x, y, w, h, scale, name; exit
+          }
+        }
+        END {
+          if (focused=="yes" && x!="" && y!="" && w!="" && h!="" && scale!="" && name!="") {
+            print x, y, w, h, scale, name
+          }
+        }')
+    fi
+    if [ -z "$monitor_data" ] || [[ "$monitor_data" =~ ^null ]]; then
+      debug_echo "Error: Could not get focused monitor information"
+      return 1
+    fi
+    echo "$monitor_data"
+  }
+
+  # Function to calculate dropdown position with proper scaling and centering
+  calculate_dropdown_position() {
+    local monitor_info
+    monitor_info=$(get_monitor_info) || true
+
+    if [ $? -ne 0 ] || [ -z "$monitor_info" ]; then
+      debug_echo "Error: Failed to get monitor info, using fallback values"
+      echo "100 100 800 600 fallback-monitor"
+      return 1
+    fi
+
+    local mon_x=$(echo $monitor_info | cut -d' ' -f1)
+    local mon_y=$(echo $monitor_info | cut -d' ' -f2)
+    local mon_width=$(echo $monitor_info | cut -d' ' -f3)
+    local mon_height=$(echo $monitor_info | cut -d' ' -f4)
+    local mon_scale=$(echo $monitor_info | cut -d' ' -f5)
+    local mon_name=$(echo $monitor_info | cut -d' ' -f6)
+
+    debug_echo "Monitor info: x=$mon_x, y=$mon_y, width=$mon_width, height=$mon_height, scale=$mon_scale"
+
+    # Validate numeric fields
+    if ! [[ "$mon_x" =~ ^-?[0-9]+$ && "$mon_y" =~ ^-?[0-9]+$ && "$mon_width" =~ ^[0-9]+$ && "$mon_height" =~ ^[0-9]+$ ]]; then
+      debug_echo "Invalid monitor info format, using fallback values"
+      echo "100 100 800 600 fallback-monitor"
+      return 1
+    fi
+
+    # Validate scale value and provide fallback
+    if [ -z "$mon_scale" ] || [ "$mon_scale" = "null" ] || [ "$mon_scale" = "0" ]; then
+      debug_echo "Invalid scale value, using 1.0 as fallback"
+      mon_scale="1.0"
+    fi
+
+    # Calculate logical dimensions by dividing physical dimensions by scale
+    local logical_width logical_height
+    if [ -x "${pkgs.bc}/bin/bc" ]; then
+      logical_width=$(echo "scale=0; $mon_width / $mon_scale" | ${pkgs.bc}/bin/bc | cut -d'.' -f1)
+      logical_height=$(echo "scale=0; $mon_height / $mon_scale" | ${pkgs.bc}/bin/bc | cut -d'.' -f1)
+    else
+      # Fallback to integer math (multiply by 100 for precision, then divide)
+      local scale_int=$(echo "$mon_scale" | sed 's/\.//' | sed 's/^0*//')
+      if [ -z "$scale_int" ]; then scale_int=100; fi
+
+      logical_width=$(((mon_width * 100) / scale_int))
+      logical_height=$(((mon_height * 100) / scale_int))
+    fi
+
+    # Ensure we have valid integer values
+    if ! [[ "$logical_width" =~ ^-?[0-9]+$ ]]; then logical_width=$mon_width; fi
+    if ! [[ "$logical_height" =~ ^-?[0-9]+$ ]]; then logical_height=$mon_height; fi
+
+    debug_echo "Physical resolution: ''${mon_width}x''${mon_height}"
+    debug_echo "Logical resolution: ''${logical_width}x''${logical_height} (physical ÷ scale)"
+
+    # Calculate window dimensions based on LOGICAL space percentages
+    local width=$((logical_width * WIDTH_PERCENT / 100))
+    local height=$((logical_height * HEIGHT_PERCENT / 100))
+
+    # Calculate Y position from top based on percentage of LOGICAL height
+    local y_offset=$((logical_height * Y_PERCENT / 100))
+
+    # Calculate centered X position in LOGICAL space
+    local x_offset=$(((logical_width - width) / 2))
+
+    # Apply monitor offset to get final positions in logical coordinates
+    local final_x=$((mon_x + x_offset))
+    local final_y=$((mon_y + y_offset))
+
+    debug_echo "Window size: ''${width}x''${height} (logical pixels)"
+    debug_echo "Final position: x=$final_x, y=$final_y (logical coordinates)"
+    debug_echo "Hyprland will scale these to physical coordinates automatically"
+
+    echo "$final_x $final_y $width $height $mon_name"
+  }
+
+  # Ensure Hyprland is ready and get the current workspace
+  wait_for_hypr
+  CURRENT_WS=$(hyprjson activeworkspace | ${pkgs.jq}/bin/jq -r '.id // empty')
+  if [ -z "''${CURRENT_WS}" ]; then
+    # Try once more after a short wait
+    sleep 0.1
+    CURRENT_WS=$(hyprjson activeworkspace | ${pkgs.jq}/bin/jq -r '.id // empty')
+  fi
+  if [ -z "''${CURRENT_WS}" ]; then
+    debug_echo "Warning: unable to read active workspace; using workspace 1"
+    CURRENT_WS="1"
+  fi
+
+  # Function to get stored terminal address
+  get_terminal_address() {
+    if [ -f "$ADDR_FILE" ] && [ -s "$ADDR_FILE" ]; then
+      cut -d' ' -f1 "$ADDR_FILE"
+    fi
+  }
+
+  # Try to find an existing dropdown terminal by class
+  find_terminal_by_class() {
+    hyprjson clients | ${pkgs.jq}/bin/jq -r --arg CLASS "$DROPDOWN_CLASS" \
+      '.[] | select(.class == $CLASS) | .address' | head -1
+  }
+
+  # Function to get stored monitor name
+  get_terminal_monitor() {
+    if [ -f "$ADDR_FILE" ] && [ -s "$ADDR_FILE" ]; then
+      cut -d' ' -f2- "$ADDR_FILE"
+    fi
+  }
+
+  # Function to check if terminal exists
+  terminal_exists() {
+    local addr=$(get_terminal_address)
+    if [ -n "$addr" ]; then
+      hyprjson clients | ${pkgs.jq}/bin/jq -e --arg ADDR "$addr" 'any(.[]; .address == $ADDR)' >/dev/null 2>&1
+    else
+      return 1
+    fi
+  }
+  # Function to check if a window address exists
+  window_exists() {
+    local addr="$1"
+    if [ -n "$addr" ]; then
+      hyprjson clients | ${pkgs.jq}/bin/jq -e --arg ADDR "$addr" 'any(.[]; .address == $ADDR)' >/dev/null 2>&1
+    else
+      return 1
+    fi
+  }
+
+  # Resolve terminal address, recovering by class if needed
+  resolve_terminal_address() {
+    local addr
+    addr=$(get_terminal_address)
+    if [ -n "$addr" ] && window_exists "$addr"; then
+      echo "$addr"
+      return 0
+    fi
+
+    local recovered
+    recovered=$(find_terminal_by_class)
+    if [ -n "$recovered" ] && [ "$recovered" != "null" ]; then
+      local mon_name
+      mon_name=$(get_monitor_info | awk '{print $6}') || true
+      echo "$recovered $mon_name" >"$ADDR_FILE"
+      echo "$recovered"
+      return 0
+    fi
+
+    rm -f "$ADDR_FILE"
+    return 1
+  }
+
+  # Function to check if window is pinned
+  window_is_pinned() {
+    local addr="$1"
+    if [ -n "$addr" ]; then
+      hyprjson clients | ${pkgs.jq}/bin/jq -e --arg ADDR "$addr" '.[] | select(.address == $ADDR) | .pinned == true' >/dev/null 2>&1
+    else
+      return 1
+    fi
+  }
+
+  # Ensure pin state without toggling unexpectedly
+  ensure_pinned() {
+    local addr="$1"
+    if ! window_is_pinned "$addr"; then
+      hyprctl dispatch pin "address:$addr" >/dev/null 2>&1
+    fi
+  }
+
+  ensure_unpinned() {
+    local addr="$1"
+    if window_is_pinned "$addr"; then
+      hyprctl dispatch pin "address:$addr" >/dev/null 2>&1
+    fi
+  }
+
+  # Function to spawn terminal and capture its address
+  spawn_terminal() {
+    debug_echo "Creating new dropdown terminal with command: $TERMINAL_CMD"
+
+    # Calculate dropdown position for later use
+    local pos_info
+    pos_info=$(calculate_dropdown_position || true)
+    if [ $? -ne 0 ]; then
+      debug_echo "Warning: Using fallback positioning"
+    fi
+
+    local target_x=$(echo $pos_info | cut -d' ' -f1)
+    local target_y=$(echo $pos_info | cut -d' ' -f2)
+    local width=$(echo $pos_info | cut -d' ' -f3)
+    local height=$(echo $pos_info | cut -d' ' -f4)
+    local monitor_name=$(echo $pos_info | cut -d' ' -f5)
+
+    debug_echo "Target position: ''${target_x},''${target_y}, size: ''${width}x''${height}"
+
+    # Snapshot clients before spawn (for robust detection)
+    local windows_before count_before
+    windows_before=$(hyprjson clients || true)
+    count_before=$(echo "$windows_before" | ${pkgs.jq}/bin/jq -r 'length' 2>/dev/null || echo 0)
+
+    local spawn_cmd="$TERMINAL_CMD --class $DROPDOWN_CLASS,$DROPDOWN_CLASS"
+
+    # Launch in scratchpad to avoid visible spawn; size will be enforced after detection
+    hyprctl dispatch exec "[float; workspace $SPECIAL_WS silent] $spawn_cmd" >/dev/null 2>&1 || true
+
+    # Wait briefly, then diff client lists to find the new window
+    sleep 0.1
+    local windows_after count_after
+    windows_after=$(hyprjson clients || true)
+    count_after=$(echo "$windows_after" | ${pkgs.jq}/bin/jq -r 'length' 2>/dev/null || echo 0)
+
+    local new_addr=""
+    if [ "$count_after" -gt "$count_before" ] 2>/dev/null; then
+      new_addr=$(comm -13 \
+        <(echo "$windows_before" | ${pkgs.jq}/bin/jq -r '.[].address' | sort) \
+        <(echo "$windows_after" | ${pkgs.jq}/bin/jq -r '.[].address' | sort) | head -1)
+    fi
+
+    # Fallback: grab most recent window with our class
+    if [ -z "$new_addr" ] || [ "$new_addr" = "null" ]; then
+      new_addr=$(echo "$windows_after" | ${pkgs.jq}/bin/jq -r --arg CLS "$DROPDOWN_CLASS" \
+        'map(select(.class == $CLS)) | sort_by(.focusHistoryID // 0) | .[-1].address' 2>/dev/null)
+    fi
+
+    if [ -n "$new_addr" ] && [ "$new_addr" != "null" ]; then
+      # Store the address and monitor name
+      echo "$new_addr $monitor_name" >"$ADDR_FILE"
+      debug_echo "Terminal created with address: $new_addr in special workspace on monitor $monitor_name"
+
+      # Ensure scratchpad placement (in case exec flags were ignored)
+      hyprctl dispatch movetoworkspacesilent "$SPECIAL_WS,address:$new_addr" >/dev/null 2>&1 || true
+      ensure_floating "$new_addr"
+      hyprctl dispatch resizewindowpixel "exact $width $height,address:$new_addr" >/dev/null 2>&1 || true
+
+      # Move to current workspace but start hidden off-screen
+      hyprctl dispatch movetoworkspacesilent "$CURRENT_WS,address:$new_addr"
+      ensure_pinned "$new_addr"
+      hyprctl dispatch resizewindowpixel "exact $width $height,address:$new_addr" >/dev/null 2>&1
+      local off_y=$((target_y - height - 200))
+      hyprctl dispatch movewindowpixel "exact $target_x $off_y,address:$new_addr" >/dev/null 2>&1
+      set_hidden_state "hidden"
+
+      if [ "$SPAWN_ONLY" = true ]; then
+        debug_echo "Spawn-only: leaving terminal hidden off-screen"
+        return 0
+      fi
+
+      # Animate in
+      animate_slide_down "$new_addr" "$target_x" "$target_y" "$width" "$height"
+      set_hidden_state "shown"
+
+      return 0
+    fi
+
+    debug_echo "Failed to detect new terminal window; aborting spawn"
+    return 1
+  }
+
+  # Main logic
+  TERMINAL_ADDR=$(resolve_terminal_address || true)
+  if [ -n "$TERMINAL_ADDR" ]; then
+    debug_echo "Found existing terminal: $TERMINAL_ADDR"
+    focused_monitor=$(get_monitor_info | awk '{print $6}') || true
+    dropdown_monitor=$(get_terminal_monitor)
+    if [ "$focused_monitor" != "$dropdown_monitor" ]; then
+      debug_echo "Monitor focus changed: moving dropdown to $focused_monitor"
+      # Calculate new position for focused monitor
+      pos_info=$(calculate_dropdown_position || true)
+      target_x=$(echo $pos_info | cut -d' ' -f1)
+      target_y=$(echo $pos_info | cut -d' ' -f2)
+      width=$(echo $pos_info | cut -d' ' -f3)
+      height=$(echo $pos_info | cut -d' ' -f4)
+      monitor_name=$(echo $pos_info | cut -d' ' -f5)
+      # Move and resize window
+      hyprctl dispatch movewindowpixel "exact $target_x $target_y,address:$TERMINAL_ADDR"
+      hyprctl dispatch resizewindowpixel "exact $width $height,address:$TERMINAL_ADDR"
+      # Update ADDR_FILE
+      echo "$TERMINAL_ADDR $monitor_name" >"$ADDR_FILE"
+    fi
+
+    hidden_state=$(get_hidden_state)
+    if [ "$hidden_state" = "hidden" ] || [ -z "$hidden_state" ] || window_is_hidden "$TERMINAL_ADDR"; then
+      debug_echo "Bringing terminal from hidden position with slide down animation"
+
+      # Calculate target position
+      pos_info=$(calculate_dropdown_position || true)
+      target_x=$(echo $pos_info | cut -d' ' -f1)
+      target_y=$(echo $pos_info | cut -d' ' -f2)
+      width=$(echo $pos_info | cut -d' ' -f3)
+      height=$(echo $pos_info | cut -d' ' -f4)
+
+      ensure_pinned "$TERMINAL_ADDR"
+
+      # Set size and animate slide down
+      hyprctl dispatch resizewindowpixel "exact $width $height,address:$TERMINAL_ADDR"
+      animate_slide_down "$TERMINAL_ADDR" "$target_x" "$target_y" "$width" "$height"
+
+      hyprctl dispatch focuswindow "address:$TERMINAL_ADDR"
+      set_hidden_state "shown"
+    else
+      debug_echo "Hiding terminal off-screen with slide up animation"
+
+      # Get current geometry for animation
+      geometry=$(get_window_geometry "$TERMINAL_ADDR")
+      if [ -n "$geometry" ]; then
+        curr_x=$(echo $geometry | cut -d' ' -f1)
+        curr_y=$(echo $geometry | cut -d' ' -f2)
+        curr_width=$(echo $geometry | cut -d' ' -f3)
+        curr_height=$(echo $geometry | cut -d' ' -f4)
+
+        debug_echo "Current geometry: ''${curr_x},''${curr_y} ''${curr_width}x''${curr_height}"
+
+        # Animate slide up first
+        animate_slide_up "$TERMINAL_ADDR" "$curr_x" "$curr_y" "$curr_width" "$curr_height"
+
+        # Move off-screen after animation
+        off_y=$((curr_y - curr_height - 200))
+        hyprctl dispatch movewindowpixel "exact $curr_x $off_y,address:$TERMINAL_ADDR" >/dev/null 2>&1
+        ensure_unpinned "$TERMINAL_ADDR"
+        set_hidden_state "hidden"
+      else
+        debug_echo "Could not get window geometry, moving off-screen without animation"
+        hyprctl dispatch movewindowpixel "exact 0 -1000,address:$TERMINAL_ADDR" >/dev/null 2>&1
+        ensure_unpinned "$TERMINAL_ADDR"
+        set_hidden_state "hidden"
+      fi
+    fi
+  else
+    debug_echo "No existing terminal found, creating new one"
+    if spawn_terminal; then
+      TERMINAL_ADDR=$(get_terminal_address)
+      if [ "$SPAWN_ONLY" = false ] && [ -n "$TERMINAL_ADDR" ]; then
+        hyprctl dispatch focuswindow "address:$TERMINAL_ADDR"
+      fi
+    fi
+  fi
+''

@@ -8,6 +8,13 @@
   # ============ VMware Workstation ============
   # nixpkgs 自带的 vmware-workstation + vmmon/vmnet 内核模块
   # （内核模块会针对 boot.kernelPackages 自动编译，首次构建较久）
+  #
+  # 注意：bundle 源默认从 archive.org 拉取（国内被墙）。
+  # 本机已用 `nix store add-file` 把文件预置进 store，
+  # 路径与 fetchurl 输出一致，构建时自动跳过下载：
+  #   nix store add-file \
+  #     --name VMware-Workstation-Full-25H2u1-25219725.x86_64.bundle \
+  #     ~/VMware-Workstation-Full-25H2u1-25219725.x86_64.bundle
   virtualisation.vmware.host.enable = true;
 
   # vmware-vmx 会触发 kcompactd0 高占用（内核透明大页问题），

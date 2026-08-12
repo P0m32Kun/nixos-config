@@ -1,0 +1,53 @@
+[bar.default]
+center = [ "screenshot", "workspaces", "caffeine" ]
+end = [ "clock", "date", "tray", "notifications", "clipboard", "volume", "battery", "control-center", "session" ]
+margin_ends = 20
+scale = 1.2500000111758709
+start = [ "launcher", "wallpaper", "active_window", "audio_visualizer" ]
+
+[location]
+auto_locate = true
+
+[lockscreen_widgets]
+enabled = false
+schema_version = 2
+widget_order = [ "lockscreen-login-box@eDP-1" ]
+
+    [lockscreen_widgets.grid]
+    cell_size = 16
+    major_interval = 4
+    visible = true
+
+    [lockscreen_widgets.widget."lockscreen-login-box@eDP-1"]
+    box_height = 0.0
+    box_width = 0.0
+    cx = 960.0
+    cy = 540.0
+    output = "eDP-1"
+    rotation = 0.0
+    type = "login_box"
+
+[shell]
+font_family = "Noto Sans CJK SC"
+telemetry_enabled = false
+
+    [shell.panel]
+    control_center_placement = "centered"
+    transparency_mode = "soft"
+
+[theme]
+community_palette = "Catppuccin Lavender"
+source = "community"
+wallpaper_scheme = "m3-fruit-salad"
+
+[wallpaper]
+directory = "/home/kun/Pictures/Wallpapers"
+
+    [wallpaper.default]
+    path = "/home/kun/Pictures/Wallpapers/bluehour.jpg"
+
+    [wallpaper.last]
+    path = "/home/kun/Pictures/Wallpapers/bluehour.jpg"
+
+    [wallpaper.monitors.eDP-1]
+    path = "/home/kun/Pictures/Wallpapers/bluehour.jpg"

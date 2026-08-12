@@ -11,6 +11,8 @@
     ../../modules/packages.nix      # 软件包
     ../../modules/desktop/hyprland.nix # 桌面环境（Hyprland，原 GNOME）
     ../../modules/desktop/audio.nix # 声音
+    ../../modules/security/fingerprint.nix # 指纹识别（fprintd + libfprint）
+    ../../modules/security/sudo.nix    # sudo 规则（pi 免密 nixos-rebuild）
     ../../modules/users/kun.nix     # 用户
     ../../modules/virtualization.nix # VMware / KVM / Podman
 

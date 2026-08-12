@@ -129,11 +129,10 @@ in
       text = builtins.toJSON piModelsJson;
     };
 
-    # ponytail skill 默认模式（~/.config/ponytail/config.json，插件读取）
-    # off = 默认不激活；需要时 /ponytail full 临时开启
-    ".config/ponytail/config.json" = {
-      text = builtins.toJSON { defaultMode = "off"; };
-    };
+    # ponytail skill 默认模式：~/.config/ponytail/config.json 由插件自管
+    # （hooks/ponytail-config.js 的 writeDefaultMode 会在 /ponytail 命令时写入），
+    # home-manager 声明会与插件运行时写入冲突导致激活失败，故不声明；
+    # 当前文件内容 {"defaultMode":"off"} 即默认关闭，可用 /ponytail full 临时开启
 
     # 自写扩展目录（*.ts 或 子目录/index.ts），符号链接到 ~/.pi/agent/extensions/
     # 注意：nix store 只读，扩展写不了自己的 config.json。pi-rtk-optimizer 的
