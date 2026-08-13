@@ -3,31 +3,35 @@
 # ============================================================
 # agent-skills：自有 skill 平台（pi / codex / hermes 三宿主）
 # ------------------------------------------------------------
-# 集成方式遵循仓库 docs/nixos.md（私有仓库，不能进 nix store）：
-#   - 真实文件（CLI 可写）：~/.local/state/agent-skills/
-#       hosts/{pi,codex,hermes}/{AGENTS.md,SOUL.md}
-#       skills/{pi,codex,hermes}/
-#   - home-manager 只声明 out-of-store 符号链接，指向真实文件；
-#     sync-policy 要求目标是普通文件（拒绝 nix store 符号链接）
-#   - 仓库本体 clone 到 ~/.local/share/agent-skills（git 更新），
-#     依赖用 `npm ci` 装（ajv/yaml），首次一次性执行：
-#       git clone git@github.com:P0m32Kun/agent-skills.git ~/.local/share/agent-skills
-#       cd ~/.local/share/agent-skills && npm ci
-#   - 日常同步：`agent-skills-sync`（先只读检查，APPLY=1 才写入）
+# 集成方式（NixOS + home-manager 接管，遵循仓库 docs/nixos.md）：
+#   - 源码：flake 输入 agent-skills（git+ssh，见 flake.nix），
+#     仓库自带 flake（overlays.default 纯别名）打成 store 包，
+#     `kun`/`agent-skills` 命令由 home.packages 提供（进 HM profile）
+#   - 部署：激活时跑 `kun init --layout home-manager`，把三宿主 skills
+#     与策略写入 ~/.local/state/agent-skills/（可变，CLI 可写）；
+#     kun init 只读 store 包，不依赖 git checkout
+#   - host 可见路径是 out-of-store 符号链接：home-manager 只声明指针，
+#     真身在 state 目录（sync-policy 要求目标是普通文件，拒绝 store 链接）
+#   - 日常更新：agent-skills 仓库 commit+push 后
+#       nix flake update agent-skills && ./rebuild.sh
+#     即完成"拉新源码 + 重建 CLI + 重新部署"，不用 kun update
+#     （store 里的 kun 无 git checkout，kun update 会报 KUN_UPDATE_SOURCE）
+#   - 首次部署前无需手工建目录：kun init 自建 state 目录
 # ============================================================
 let
   stateDir = "${config.home.homeDirectory}/.local/state/agent-skills";
   link = config.lib.file.mkOutOfStoreSymlink;
 in
 {
-  # ---- 激活前建好 state 目录骨架（保证 out-of-store 链接目标存在）----
-  home.activation.createAgentSkillsState = lib.hm.dag.entryBefore [ "linkGeneration" ] ''
-    mkdir -p "${stateDir}/hosts/pi" "${stateDir}/hosts/codex" "${stateDir}/hosts/hermes"
-    mkdir -p "${stateDir}/skills/pi" "${stateDir}/skills/codex" "${stateDir}/skills/hermes"
-    ${pkgs.coreutils}/bin/touch \
-      "${stateDir}/hosts/pi/AGENTS.md" \
-      "${stateDir}/hosts/codex/AGENTS.md" \
-      "${stateDir}/hosts/hermes/SOUL.md"
+  # ---- kun / agent-skills 命令（store 包，随 flake 输入版本更新） ----
+  home.packages = [ pkgs.agent-skills ];
+
+  # ---- 激活时用新版本 kun 重新部署三宿主 skills + 策略到 state 目录 ----
+  # （entryBefore linkGeneration：先有真身文件，再生成 out-of-store 链接；
+  #   fail-fast：某次提交校验失败则 switch 中止，旧 generation 保持生效；
+  #   想预览可先跑 `kun init --check --layout home-manager`）
+  home.activation.deployAgentSkills = lib.hm.dag.entryBefore [ "linkGeneration" ] ''
+    ${pkgs.agent-skills}/bin/kun init --layout home-manager
   '';
 
   # ---- 宿主可见路径 → 真实文件（out-of-store 链接） ----
@@ -41,33 +45,11 @@ in
     ".hermes/skills".source = link "${stateDir}/skills/hermes";
   };
 
-  # ---- 同步函数（等价 docs/nixos.md 的 profiles/local/sync.sh） ----
-  programs.fish.functions.agent-skills-sync = {
-    description = "同步 agent-skills（build + install + sync-policy 三宿主）";
+  # ---- 只读检查三宿主部署状态（替代旧 agent-skills-sync 的检查角色） ----
+  programs.fish.functions.kun-doctor = {
+    description = "只读检查 agent-skills 三宿主部署状态（home-manager 布局）";
     body = ''
-      set -l root "$HOME/.local/share/agent-skills"
-      set -l state "$HOME/.local/state/agent-skills"
-      if not test -d "$root"
-        echo "agent-skills 仓库不存在，先执行：" >&2
-        echo "  git clone git@github.com:P0m32Kun/agent-skills.git $root" >&2
-        echo "  cd $root && npm ci" >&2
-        return 1
-      end
-      node "$root/src/cli/index.js" build "$root"
-      for host in pi codex hermes
-        set -l policy "$state/hosts/$host/AGENTS.md"
-        if test "$host" = hermes
-          set policy "$state/hosts/hermes/SOUL.md"
-        end
-        node "$root/src/cli/index.js" install "$host" "$state/skills/$host" "$root"
-        if set -q APPLY
-          node "$root/src/cli/index.js" sync-policy "$host" "$root" --target "$policy" --apply
-        else
-          node "$root/src/cli/index.js" sync-policy "$host" "$root" --target "$policy"
-        end
-      end
-      echo ""
-      echo "检查通过后，用 APPLY=1 agent-skills-sync 真正写入策略文件"
+      kun doctor --layout home-manager
     '';
   };
 }

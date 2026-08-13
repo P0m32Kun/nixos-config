@@ -50,11 +50,17 @@
       flake = true;
     };
 
-    # 自有的 agent-skills 技能平台：私有仓库，不走 flake 输入
-    # （见 home/agent-skills.nix：git clone 到 ~/.local/share/agent-skills）
+    # 自有的 agent-skills 技能平台：私有仓库，仓库自带 flake.nix
+    # （packages.default / overlays.default，打包与 hash 在源码仓库维护）。
+    # nixpkgs 跟随本仓库输入（TUNA 镜像），避免双份 nixpkgs。
+    # 更新：agent-skills 仓库 commit+push 后 `nix flake update agent-skills`
+    agent-skills = {
+      url = "git+ssh://git@github.com/P0m32Kun/agent-skills.git";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, hermes-agent, noctalia, ... }@inputs:
+  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, hermes-agent, noctalia, agent-skills, ... }@inputs:
     let
       system = "x86_64-linux";
       # unstable nixpkgs 的包集合，通过 specialArgs 传给模块
@@ -63,6 +69,7 @@
       # 自定义包（不在 nixpkgs 的 npm 工具等），按程序拆分子 overlay
       overlays = [
         (import ./overlays/pi-tools.nix)
+        agent-skills.overlays.default
         (import ./overlays/rtk.nix)
         (import ./overlays/herdr.nix)
         # hermes-agent 官方 overlay：pkgs.hermes-agent = 其 flake 的 default 包
