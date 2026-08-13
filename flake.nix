@@ -46,7 +46,7 @@
     # lmclient（龙猫云_Lite）：本地独立 flake 打包的 ClashMeta 代理客户端
     # （AppImage 在 lmclient-nix/ 目录，保持单一来源，不复制进本仓库）
     lmclient = {
-      url = "path:/home/kun/lmclient-nix";
+      url = "path:/home/kun/Projects/lmclient-nix";
       flake = true;
     };
 

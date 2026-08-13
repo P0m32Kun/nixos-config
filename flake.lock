@@ -74,11 +74,11 @@
       "locked": {
         "lastModified": 1786502566,
         "narHash": "sha256-MJfunViQFm5I5/GyQPDkM1rhlyKajmrO/9rqIKJLcVM=",
-        "path": "/home/kun/lmclient-nix",
+        "path": "/home/kun/Projects/lmclient-nix",
         "type": "path"
       },
       "original": {
-        "path": "/home/kun/lmclient-nix",
+        "path": "/home/kun/Projects/lmclient-nix",
         "type": "path"
       }
     },
