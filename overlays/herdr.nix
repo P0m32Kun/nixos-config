@@ -3,6 +3,8 @@
 # 官方 release 提供 x86_64-linux 静态链接二进制（static-pie，无动态依赖），
 # 直接 fetchurl + install 即可；nixpkgs 里没有此包。
 # 版本锁定：v0.8.0（2026-08 检查的 latest release）
+# ⚠️ 升级 herdr 时：同步检查 home/pi-extensions/herdr-agent-state.ts
+#   是否需跟随更新（见该文件头部注释；扩展内容长期稳定，通常不变）
 # ============================================================
 final: prev:
 
