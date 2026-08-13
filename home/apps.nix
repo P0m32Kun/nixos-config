@@ -12,6 +12,14 @@
     file
     ripgrep
     fd
+    # 提效 CLI 工具
+    lazygit    # TUI git 客户端（diff/staging/分支可视化）
+    bat        # cat 高亮版（配 fzf 预览）
+    eza        # 现代 ls（图标/颜色/树形）
+    btop       # 系统监控（CPU/内存/网络/进程）
+    duf        # 磁盘用量一览
+    ncdu       # 交互式磁盘分析（找大文件）
+    tldr       # 命令速查（比 man 简洁）
   ];
 
   # ============ Alacritty（终端） ============
@@ -80,19 +88,33 @@
       set -gx EDITOR nvim
       set -gx VISUAL nvim
     '';
-    interactiveShellInit = ''
+    interactiveShellInit = lib.mkMerge [
+      ''
       # 别名
-      alias ll 'ls -lah'
-      alias la 'ls -A'
-      alias l 'ls -F'
+      alias ll 'eza -lah --icons'
+      alias la 'eza -A'
+      alias l 'eza -F'
       # 一键重建系统（与 rebuild.sh 一致）
       alias rebuild 'sudo nixos-rebuild switch --flake /etc/nixos'
       # 更新 flake 锁 + 重建
       alias update 'nix flake update --flake /etc/nixos && sudo nixos-rebuild switch --flake /etc/nixos'
       # nix 商店 GC
       alias gc 'nix-collect-garbage -d'
-    '';
+      ''
+      # atuin 接管 Ctrl-R：fzf 的 fish 集成用 mkOrder 200 绑定，mkAfter 保证 atuin 胜出
+      (lib.mkAfter ''
+        bind ctrl-r _atuin_search
+      '')
+    ];
   };
+
+  # ============ 提效 CLI 工具 ============
+  # zoxide：智能 cd，z 跳转历史目录（yazi 内置 z 键也依赖它）
+  programs.zoxide.enable = true;
+  # fzf：模糊搜索，Ctrl-T 插入文件路径 / Alt-C 跳转目录
+  programs.fzf.enable = true;
+  # atuin：历史搜索，Ctrl-R 接管（比 fzf 的历史搜索更强）
+  programs.atuin.enable = true;
 
   # ============ Starship（提示符） ============
   # 取代原 fish_prompt；fish 集成由 home-manager 自动注入 `starship init fish`
