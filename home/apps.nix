@@ -20,6 +20,11 @@
     duf        # 磁盘用量一览
     ncdu       # 交互式磁盘分析（找大文件）
     tldr       # 命令速查（比 man 简洁）
+    # 解压工具族（配合 extract 函数）
+    unzip      # zip 解压
+    p7zip      # 7z/7za：7z、rar 等多格式
+    unrar      # rar 原生解压
+    zip        # 创建 zip（与 unzip 配套）
   ];
 
   # ============ Alacritty（终端） ============
@@ -106,6 +111,72 @@
         bind ctrl-r _atuin_search
       '')
     ];
+
+    # ============ extract：一键解压 ============
+    # 按扩展名自动选工具；函数文件自动加载，无需 source
+    functions.extract.body = ''
+      if test (count $argv) -lt 1
+        echo "用法: extract <压缩包> [-d 目标目录]"
+        return 1
+      end
+      set -l file $argv[1]
+      set -l outdir ""
+      if test (count $argv) -ge 3; and test "$argv[2]" = "-d"
+        set outdir $argv[3]
+      end
+      if not test -f "$file"
+        echo "extract: 文件不存在: $file"
+        return 1
+      end
+      # 目标目录参数：tar 用 -C / unzip 用 -d / 7z 用 -o（无空格，目录须已存在）
+      set -l targ
+      set -l uarg
+      set -l zarg
+      if test -n "$outdir"
+        mkdir -p "$outdir"
+        set targ -C "$outdir"
+        set uarg -d "$outdir"
+        set zarg -o"$outdir"
+      end
+      switch $file
+        case '*.tar.gz' '*.tgz'
+          tar -xzf $targ "$file"
+        case '*.tar.xz' '*.txz'
+          tar -xJf $targ "$file"
+        case '*.tar.zst' '*.tzst'
+          tar --zstd -xf $targ "$file"
+        case '*.tar.bz2' '*.tbz2' '*.tbz'
+          tar -xjf $targ "$file"
+        case '*.tar'
+          tar -xf $targ "$file"
+        case '*.zip'
+          # Windows 工具打的流式/GBK 包 unzip 可能误报 zip bomb，失败自动回退 7z
+          # -o：覆盖已有文件不询问，避免交互/非交互下返回非零误触发回退
+          if not unzip -o $uarg "$file"
+            echo "extract: unzip 失败，自动回退 7z…"
+            7z x -y $zarg "$file"
+          end
+        case '*.7z'
+          7z x -y $zarg "$file"
+        case '*.rar'
+          if test -n "$outdir"
+            unrar x "$file" "$outdir"/
+          else
+            unrar x "$file"
+          end
+        case '*.gz'
+          gunzip "$file"
+        case '*.xz'
+          unxz "$file"
+        case '*.bz2'
+          bunzip2 "$file"
+        case '*.zst'
+          unzstd "$file"
+        case '*'
+          echo "extract: 不支持的格式: $file"
+          return 1
+      end
+    '';
   };
 
   # ============ 提效 CLI 工具 ============
