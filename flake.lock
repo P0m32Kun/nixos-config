@@ -67,6 +67,21 @@
         "type": "github"
       }
     },
+    "lmclient": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1786502566,
+        "narHash": "sha256-MJfunViQFm5I5/GyQPDkM1rhlyKajmrO/9rqIKJLcVM=",
+        "path": "/home/kun/lmclient-nix",
+        "type": "path"
+      },
+      "original": {
+        "path": "/home/kun/lmclient-nix",
+        "type": "path"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 315532800,
@@ -93,6 +108,18 @@
     },
     "nixpkgs_2": {
       "locked": {
+        "lastModified": 315532800,
+        "narHash": "sha256-F5163SsL9xqCLcx8CS2Y5MeLA5z6mfgXGDiCBEqSnbo=",
+        "type": "tarball",
+        "url": "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/nixos-26.05/nixexprs.tar.xz"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/nixos-26.05/nixexprs.tar.xz"
+      }
+    },
+    "nixpkgs_3": {
+      "locked": {
         "lastModified": 1786106723,
         "narHash": "sha256-CgKDSHL6rqAAQkkvg1xaZDQXb77+4XW73iGcUMJ+2w0=",
         "rev": "f13ff45afd1bb73e640eaa08a7066dbed07e3238",
@@ -106,7 +133,7 @@
     },
     "noctalia": {
       "inputs": {
-        "nixpkgs": "nixpkgs_2"
+        "nixpkgs": "nixpkgs_3"
       },
       "locked": {
         "lastModified": 1786499996,
@@ -198,7 +225,8 @@
       "inputs": {
         "hermes-agent": "hermes-agent",
         "home-manager": "home-manager",
-        "nixpkgs": "nixpkgs",
+        "lmclient": "lmclient",
+        "nixpkgs": "nixpkgs_2",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "noctalia": "noctalia"
       }

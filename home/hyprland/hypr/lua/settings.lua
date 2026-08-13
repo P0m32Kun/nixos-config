@@ -21,6 +21,7 @@ hl.config({
 
 hl.config({
   input = {
+    natural_scroll = true,  -- 鼠标自然滚动（触摸板单独由 touchpad.natural_scroll 控制）
     kb_layout = "us",
     kb_variant = "",
     kb_model = "",
@@ -31,7 +32,7 @@ hl.config({
     repeat_rate = 35,
     repeat_delay = 200,
     touchpad = {
-      natural_scroll = false,
+      natural_scroll = true,
     },
   },
 })

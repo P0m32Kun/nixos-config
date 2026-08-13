@@ -43,6 +43,13 @@
       url = "github:noctalia-dev/noctalia/cachix";
     };
 
+    # lmclient（龙猫云_Lite）：本地独立 flake 打包的 ClashMeta 代理客户端
+    # （AppImage 在 lmclient-nix/ 目录，保持单一来源，不复制进本仓库）
+    lmclient = {
+      url = "path:/home/kun/lmclient-nix";
+      flake = true;
+    };
+
     # 自有的 agent-skills 技能平台：私有仓库，不走 flake 输入
     # （见 home/agent-skills.nix：git clone 到 ~/.local/share/agent-skills）
   };

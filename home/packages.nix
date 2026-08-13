@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, inputs, ... }:
 
 # ============================================================
 # pi 配套二进制（LSP 服务器 + MCP 服务器），全部 nix 声明式管理
@@ -38,6 +38,10 @@
     # 密钥/配置在 ~/.hermes/（imperative，不进 nix store），
     # 首次使用运行 `hermes setup`
     hermes-agent
+
+    # ---- 龙猫云_Lite（ClashMeta 代理客户端，本地 flake lmclient-nix 打包）----
+    # 来自 flake 输入 lmclient（path:/home/kun/lmclient-nix）的 default 包
+    inputs.lmclient.packages.x86_64-linux.default
   ];
 
   # playwright 浏览器：nixpkgs 托管，指向 playwright-driver 的浏览器包
