@@ -42,6 +42,11 @@
     # ---- 龙猫云_Lite（ClashMeta 代理客户端，本地 flake lmclient-nix 打包）----
     # 来自 flake 输入 lmclient（path:/home/kun/lmclient-nix）的 default 包
     inputs.lmclient.packages.x86_64-linux.default
+
+    # ---- 通讯/会议（nixpkgs 现有包；unfree 已在 modules/packages.nix 允许）----
+    wechat # 微信（官方 Linux 版）
+    wemeet # 腾讯会议
+    wpsoffice-cn # WPS Office（中文版，原生中文界面；字体/输入法已就绪）
   ];
 
   # playwright 浏览器：nixpkgs 托管，指向 playwright-driver 的浏览器包

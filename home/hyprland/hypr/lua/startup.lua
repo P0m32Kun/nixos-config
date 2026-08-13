@@ -27,8 +27,7 @@ local startup_commands = {
   "hyprpaper",
   "qs -c overview",
   "nm-applet",
-  -- 龙猫云_Lite（ClashMeta 代理客户端，声明式安装见 home/packages.nix）
-  "lmclient",
+  -- 龙猫云_Lite 由 systemd 用户服务托管（见 home/hyprland.nix），随图形会话启停
   -- 拉起 systemd 图形会话目标（noctalia / xdg-desktop-portal 等挂在它下面）：
   -- graphical-session.target 拒绝手动启动（RefuseManualStart=yes），所以启停
   -- 自己的 hyprland-session.target（见 home/hyprland.nix），由它 Wants 依赖拉起。
@@ -36,6 +35,7 @@ local startup_commands = {
   -- 保证每次登录/重启合成器都得到全新图形会话，而不是复用旧的死连接。
   "systemctl --user stop hyprland-session.target || true; systemctl --user start hyprland-session.target",
   -- noctalia 由 systemd 用户服务启动（见 home/hyprland.nix），避免双实例
+  -- lmclient 由 systemd 用户服务启动（见 home/hyprland.nix），时序/重启/单实例由 systemd 保证
 }
 
 local function run_startup_commands()

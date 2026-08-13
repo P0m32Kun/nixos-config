@@ -2,7 +2,6 @@
 let
   # hyprland-btw 的辅助脚本（home.packages 里的可执行文件）
   rofiLegacyMenu = import ./hyprland/scripts/rofi-legacy.menu.nix { inherit pkgs; };
-  DropTerminal = import ./hyprland/scripts/DropTerminal.nix { inherit pkgs; };
   configMenu = import ./hyprland/scripts/config-menu.nix { inherit pkgs; };
   keybindsMenu = import ./hyprland/scripts/keybinds.nix { inherit pkgs; };
   hyprlandChangeLayout = import ./hyprland/scripts/hyprland-change-layout.nix { inherit pkgs; };
@@ -40,6 +39,44 @@ let
     export WAYLAND_DISPLAY="$display"
     exec ${noctaliaPkg}/bin/noctalia
   '';
+
+  # 龙猫云_Lite（ClashMeta 代理客户端，本地 flake lmclient-nix 打包，见 home/packages.nix）
+  lmclientPkg = inputs.lmclient.packages.${pkgs.stdenv.hostPlatform.system}.default;
+
+  # 等待 Wayland socket + noctalia 的 SNI 托盘 watcher 就绪后再启动 lmclient。
+  # QSystemTrayIcon 在宿主未就绪时注册会静默丢失且不重试（托盘图标消失根因）。
+  lmclientLauncher = pkgs.writeShellScript "lmclient-launcher" ''
+    set -eu
+    runtime_dir="''${XDG_RUNTIME_DIR:-/run/user/$(${pkgs.coreutils}/bin/id -u)}"
+    display="''${WAYLAND_DISPLAY:-}"
+    if [ -z "$display" ]; then
+      attempts=0
+      while [ "$attempts" -lt 50 ]; do
+        for sock in "$runtime_dir"/wayland-*; do
+          if [ -S "$sock" ]; then
+            display="''${sock##*/}"
+            break
+          fi
+        done
+        if [ -n "$display" ]; then
+          break
+        fi
+        attempts=$((attempts + 1))
+        ${pkgs.coreutils}/bin/sleep 0.2
+      done
+      if [ -z "$display" ]; then
+        echo "lmclient-launcher: unable to find WAYLAND_DISPLAY under $runtime_dir" >&2
+        exit 1
+      fi
+      export WAYLAND_DISPLAY="$display"
+    fi
+    # 等 noctalia 的 SNI 托盘 watcher 就绪（最多 20s，超时照常启动，不阻塞）
+    for i in $(${pkgs.coreutils}/bin/seq 1 100); do
+      ${pkgs.systemd}/bin/busctl --user get-property org.kde.StatusNotifierWatcher /StatusNotifierWatcher org.kde.StatusNotifierWatcher IsStatusNotifierHostRegistered >/dev/null 2>&1 && break
+      ${pkgs.coreutils}/bin/sleep 0.2
+    done
+    exec ${lmclientPkg}/bin/lmclient
+  '';
 in
 {
   # ============================================================
@@ -61,7 +98,6 @@ in
   home.packages = with pkgs; [
     # ---- 辅助脚本（hyprland-btw 原版） ----
     rofiLegacyMenu
-    DropTerminal
     configMenu
     keybindsMenu
     hyprlandChangeLayout
@@ -205,6 +241,30 @@ in
         "XDG_CURRENT_DESKTOP=Hyprland"
         "XDG_SESSION_TYPE=wayland"
       ];
+    };
+    Install = {
+      WantedBy = [ "graphical-session.target" ];
+    };
+  };
+
+  # ============ 龙猫云_Lite systemd 用户服务 ============
+  # lmclient（ClashMeta 代理客户端）由 systemd 托管：
+  #   - After noctalia → 托盘宿主先起（launcher 内再轮询 SNI watcher 兜底）
+  #   - Restart=on-failure → 崩溃自动拉起
+  #   - PartOf graphical-session.target → 随会话停止
+  #   - systemd 单实例 → 双实例/锁文件问题从根上杜绝
+  systemd.user.services.lmclient = {
+    Unit = {
+      Description = "Longmao Cloud (lmclient)";
+      After = [ "graphical-session.target" "noctalia.service" ];
+      PartOf = [ "graphical-session.target" ];
+    };
+    Service = {
+      Type = "simple";
+      ExecStart = "${lmclientLauncher}";
+      Restart = "on-failure";
+      RestartSec = 2;
+      TimeoutStopSec = 15;
     };
     Install = {
       WantedBy = [ "graphical-session.target" ];

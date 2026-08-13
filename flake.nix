@@ -72,6 +72,7 @@
         agent-skills.overlays.default
         (import ./overlays/rtk.nix)
         (import ./overlays/herdr.nix)
+        (import ./overlays/wechat.nix) # wechat：src 覆盖为官方 CDN（见 overlays/wechat.nix）
         # hermes-agent 官方 overlay：pkgs.hermes-agent = 其 flake 的 default 包
         # （纯别名，构建用 hermes 自己锁定的 nixpkgs-unstable + uv2nix）
         hermes-agent.overlays.default
