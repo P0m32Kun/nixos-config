@@ -38,4 +38,9 @@
   boot.kernel.sysctl."net.ipv4.tcp_keepalive_time" = 60;
   # ============ 打印 ============
   services.printing.enable = true;
+
+  # ============ USB 存储（udisks2） ============
+  # U 盘挂载基础设施；实际自动挂载由 home/apps.nix 的 udiskie 完成
+  services.udisks2.enable = true;
+  boot.supportedFilesystems = [ "exfat" ];
 }

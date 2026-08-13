@@ -177,6 +177,18 @@
     };
   };
 
+  # ============ udiskie（U 盘自动挂载） ============
+  # 插入 U 盘自动挂载到 /run/media/kun/，弹出时自动卸载
+  services.udiskie = {
+    enable = true;
+    settings = {
+      notify = true;   # 插入/挂载/弹出时桌面通知
+      automount = {
+        options = [ "nosuid" "noexec" "nodev" ];
+      };
+    };
+  };
+
   # ============ uv（Python 工具链） ============
   # uv 自管理 Python 版本（~/.local/share/uv），无需 nix 装 python
   home.sessionVariables = {
