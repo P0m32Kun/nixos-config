@@ -8,6 +8,23 @@
 #     用户级配置在 home/hyprland.nix（hyprland.lua + noctalia + waybar）。
 #   - 输入法 fcitx5（原 gnome.nix 中配置）原样保留，桌面无关。
 # ============================================================
+let
+  # SDDM 主题：sddm-astronaut + japanese_aesthetic 经典款（原始配色）
+  # （qtmultimedia / qtsvg / qtvirtualkeyboard 依赖已由包自带）
+  # themeConfig 生成 Themes/japanese_aesthetic.conf.user（SDDM 自动 merge，用户值优先）：
+  #   - FormPosition/VirtualKeyboardPosition=center：登录框水平居中
+  #   - ScreenWidth/ScreenHeight 留空：画布跟随实际分辨率（本机 eDP-1 3120x2080@2x，
+  #     主题默认硬编码 1920x1080 会把登录框挤到左上角）
+  sddm-astronaut = (pkgs.sddm-astronaut.override {
+    embeddedTheme = "japanese_aesthetic";
+    themeConfig = {
+      FormPosition = "center";
+      VirtualKeyboardPosition = "center";
+      ScreenWidth = "";
+      ScreenHeight = "";
+    };
+  });
+in
 {
   # ============ X11 基础（SDDM 与 XWayland 需要） ============
   services.xserver.enable = true;
@@ -17,10 +34,19 @@
     variant = "";
   };
 
-  # ============ 显示管理器：SDDM + Catppuccin 主题 ============
-  # （GNOME 的 GDM 已移除；SDDM 是 Hyprland 用户的主流选择）
+  # ============ 显示管理器：SDDM + sddm-astronaut 主题 ============
+  # （GNOME 的 GDM 已移除；SDDM 是 Hyprland 用户的主流选择；
+  #   japanese_aesthetic 经典款，见顶部 let 块的 override）
   services.displayManager.sddm.enable = true;
-  services.displayManager.sddm.theme = "catppuccin-mocha-mauve";
+  services.displayManager.sddm.theme = "sddm-astronaut-theme";
+  # sddm-astronaut 的 Main.qml 无条件 import QtMultimedia（视频/音频背景），
+  # 还用到 SVG 图标与虚拟键盘；这些 QML 模块必须进 greeter 的搜索路径，
+  # 否则主题 fallback 回默认（见 README 的 NixOS 安装说明）
+  services.displayManager.sddm.extraPackages = with pkgs; [
+    kdePackages.qtmultimedia
+    kdePackages.qtsvg
+    kdePackages.qtvirtualkeyboard
+  ];
   services.displayManager.defaultSession = "hyprland";
 
   # ============ Hyprland 合成器 ============
@@ -94,8 +120,9 @@
     # 光标 + 图标主题（Wayland 下 GTK 应用需要）
     adwaita-icon-theme
     papirus-icon-theme
-    # 鼠标光标（hyprland-btw 用 Bibata）
     bibata-cursors
+    # SDDM 主题（japanese_aesthetic 经典款；进 systemPackages 才会出现在 ThemeDir）
+    sddm-astronaut
   ];
 
   # ============ Qt6 环境（quickshell / noctalia 需要） ============

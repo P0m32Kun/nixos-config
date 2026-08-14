@@ -22,6 +22,9 @@
   # ============ 本机特有配置 ============
   # Bootloader
   boot.loader.systemd-boot.enable = true;
+  # 引导菜单只保留最近 10 个回滚点（与 modules/base.nix 的保留策略一致；
+  # 代际修剪由那里的 nix-generations-cleanup 服务负责）
+  boot.loader.systemd-boot.configurationLimit = 10;
   boot.loader.efi.canTouchEfiVariables = true;
 
   # 使用最新内核
@@ -29,6 +32,8 @@
 
   # 主机名
   networking.hostName = "nixos";
+  # 关闭防火墙（远程 SSH 可达；注意：所有端口对网络开放）
+  networking.firewall.enable = false;
 
   # 系统状态版本：从哪个 NixOS 版本开始保持默认状态设置
   # 不要随意改动（只在跨大版本升级时按官方指引修改）

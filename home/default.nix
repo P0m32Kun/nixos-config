@@ -7,7 +7,10 @@
   home.stateVersion = "26.05";
   home.file.".npmrc".text = ''
     registry=https://registry.npmmirror.com
+    prefix=${config.home.homeDirectory}/.local
   '';
+  # npm -g 装到 ~/.local（pi/context-mode 等自管工具落点），并进 PATH
+  home.sessionPath = [ "$HOME/.local/bin" ];
 
   # XDG 用户目录统一英文名（原为中文，避免工具/编码兼容问题）
   xdg.userDirs = {
@@ -32,10 +35,8 @@
   xdg.configFile."user-dirs.dirs".force = true;
   # 按程序拆分子模块，新用户级配置在这里 import
   imports = [
-    ./pi.nix       # pi 插件/扩展/MCP/LSP 配置
     ./packages.nix # 用户级软件包（LSP/MCP 二进制等）
     ./hyprland.nix # Hyprland 桌面 dotfiles + 配套组件
     ./apps.nix     # Alacritty / Helix / Fish / Yazi / uv / Obsidian
-    ./agent-skills.nix # agent-skills 技能平台（pi/codex/hermes）
   ];
 }

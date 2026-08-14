@@ -14,10 +14,10 @@
     #   - 中科大镜像： "https://mirrors.ustc.edu.cn/nix-channels/nixos-26.05/nixexprs.tar.xz"
     nixpkgs.url = "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/nixos-26.05/nixexprs.tar.xz";
 
-    # 系统本体保持 stable；个别需要追新的包（如 pi-coding-agent）从这里取
+    # unstable 输入只给 hermes-agent 的 nixpkgs follow 用（国内可达 + 版本语义一致）
     nixpkgs-unstable.url = "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/nixos-unstable/nixexprs.tar.xz";
 
-    # home-manager：声明式管理用户级配置（如 pi 的插件），随系统一起更新
+    # home-manager：声明式管理用户级配置，随系统一起更新
     # 分支与 nixpkgs 的 26.05 对齐；nixpkgs 跟随主输入（TUNA 镜像）
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
@@ -49,30 +49,18 @@
       url = "path:/home/kun/Projects/lmclient-nix";
       flake = true;
     };
-
-    # 自有的 agent-skills 技能平台：私有仓库，仓库自带 flake.nix
-    # （packages.default / overlays.default，打包与 hash 在源码仓库维护）。
-    # nixpkgs 跟随本仓库输入（TUNA 镜像），避免双份 nixpkgs。
-    # 更新：agent-skills 仓库 commit+push 后 `nix flake update agent-skills`
-    agent-skills = {
-      url = "git+ssh://git@github.com/P0m32Kun/agent-skills.git";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, hermes-agent, noctalia, agent-skills, ... }@inputs:
+  outputs = { self, nixpkgs, home-manager, hermes-agent, noctalia, ... }@inputs:
     let
       system = "x86_64-linux";
-      # unstable nixpkgs 的包集合，通过 specialArgs 传给模块
-      pkgsUnstable = nixpkgs-unstable.legacyPackages.${system};
 
-      # 自定义包（不在 nixpkgs 的 npm 工具等），按程序拆分子 overlay
+      # 自定义包（不在 nixpkgs 的），按程序拆分子 overlay
       overlays = [
-        (import ./overlays/pi-tools.nix)
-        agent-skills.overlays.default
-        (import ./overlays/rtk.nix)
+        (import ./overlays/pi-tools.nix) # codegraph（vendored node 需 autoPatchelf）
         (import ./overlays/herdr.nix)
         (import ./overlays/wechat.nix) # wechat：src 覆盖为官方 CDN（见 overlays/wechat.nix）
+        (import ./overlays/dsh.nix) # dsh：npm 打包 + --expose-internals wrapper（见 overlays/dsh.nix）
         # hermes-agent 官方 overlay：pkgs.hermes-agent = 其 flake 的 default 包
         # （纯别名，构建用 hermes 自己锁定的 nixpkgs-unstable + uv2nix）
         hermes-agent.overlays.default
@@ -82,7 +70,6 @@
       # 主机名是 "nixos"（见 hosts/nixos/default.nix 的 networking.hostName）
       nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = { inherit pkgsUnstable; };
         modules = [
           # 自定义包 overlay（新版 nixpkgs 用模块选项，而非 nixosSystem 顶层参数）
           { nixpkgs.overlays = overlays; }
@@ -95,7 +82,6 @@
             home-manager = {
               useGlobalPkgs = true;
               useUserPackages = true;
-              # （agent-skills 不走输入，见 home/agent-skills.nix）
               users.kun = import ./home;
               # 把 flake inputs 传给 home 模块（hyprland.nix 需要 noctalia）
               extraSpecialArgs = { inherit inputs; };

@@ -1,4 +1,4 @@
-{ config, lib, pkgs, pkgsUnstable, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   # ============ 允许非自由软件 ============
@@ -12,10 +12,9 @@
     neovim # 编辑器
     wget
     curl
-    # 从 unstable nixpkgs 取最新版（stable 里只有 0.75.4）
-    pkgsUnstable.pi-coding-agent
     codex
-    # pi 安装 npm/git 插件时要调用系统 npm（pi 自身只捆绑了 node 运行时）
+    # pi 本体已改 npm -g 自管（~/.local/bin/pi，见 docs/decisions/0001）；
+    # 系统 npm 仍保留，pi 装 npm/git 插件时要调用
     nodejs
   ];
 }
