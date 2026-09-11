@@ -41,6 +41,21 @@ apply_window_rule({
   },
   no_blur = true,
 })
+apply_window_rule({
+  name = "wechat",
+  match = {
+    class = "^(wechat|xwechat)$",
+  },
+  float = true,
+})
+
+apply_window_rule({
+  name = "wemeet",
+  match = {
+    class = "^(wemeetapp|wemeet)$",
+  },
+  float = true,
+})
 
 apply_window_rule({
   name = "Resolve",

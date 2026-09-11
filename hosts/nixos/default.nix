@@ -14,7 +14,7 @@
     ../../modules/security/fingerprint.nix # 指纹识别（fprintd + libfprint）
     ../../modules/security/sudo.nix    # sudo 规则（pi 免密 nixos-rebuild）
     ../../modules/users/kun.nix     # 用户
-    ../../modules/virtualization.nix # VMware / KVM / Podman
+    ../../modules/virtualization.nix # KVM / Podman
 
     # 新机器迁移时：删掉上面"本机特有配置"下不需要的部分即可
   ];

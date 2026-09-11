@@ -48,6 +48,12 @@
     wechat # 微信（官方 Linux 版）
     wemeet # 腾讯会议
     wpsoffice-cn # WPS Office（中文版，原生中文界面；字体/输入法已就绪）
+
+    # ---- 开发/安全工具（nixpkgs 现有包）----
+    go            # Go 工具链（gopls 已在 LSP 列表单独声明）
+    nmap          # 网络扫描器
+    metasploit    # Metasploit 框架（msfconsole）
+    gh            # GitHub 官方命令行工具
   ];
 
   # playwright 浏览器：nixpkgs 托管，指向 playwright-driver 的浏览器包

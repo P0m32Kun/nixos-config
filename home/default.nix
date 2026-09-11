@@ -9,8 +9,8 @@
     registry=https://registry.npmmirror.com
     prefix=${config.home.homeDirectory}/.local
   '';
-  # npm -g 装到 ~/.local（pi/context-mode 等自管工具落点），并进 PATH
-  home.sessionPath = [ "$HOME/.local/bin" ];
+  # npm -g 装到 ~/.local（pi/context-mode 等自管工具落点）、pdtm/go install 落点，并进 PATH
+  home.sessionPath = [ "$HOME/.local/bin" "$HOME/.pdtm/go/bin" "$HOME/go/bin" ];
 
   # XDG 用户目录统一英文名（原为中文，避免工具/编码兼容问题）
   xdg.userDirs = {

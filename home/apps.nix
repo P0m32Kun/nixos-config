@@ -92,6 +92,11 @@
       # 编辑器
       set -gx EDITOR nvim
       set -gx VISUAL nvim
+      # 代理（默认开启；proxy_off 关闭，proxy_on 重新开启）
+      set -gx http_proxy http://127.0.0.1:7892
+      set -gx https_proxy http://127.0.0.1:7892
+      set -gx all_proxy socks5://127.0.0.1:7892
+      set -gx no_proxy localhost,127.0.0.1,::1
     '';
     interactiveShellInit = lib.mkMerge [
       ''
@@ -111,6 +116,22 @@
         bind ctrl-r _atuin_search
       '')
     ];
+
+    # ============ proxy：代理开关 ============
+    functions.proxy_on.body = ''
+      set -gx http_proxy http://127.0.0.1:7892
+      set -gx https_proxy http://127.0.0.1:7892
+      set -gx all_proxy socks5://127.0.0.1:7892
+      set -gx no_proxy localhost,127.0.0.1,::1
+      echo "proxy on"
+    '';
+    functions.proxy_off.body = ''
+      set -e http_proxy
+      set -e https_proxy
+      set -e all_proxy
+      set -e no_proxy
+      echo "proxy off"
+    '';
 
     # ============ extract：一键解压 ============
     # 按扩展名自动选工具；函数文件自动加载，无需 source
@@ -287,5 +308,7 @@
   home.sessionVariables = {
     # uv 安装的工具（如 `uv tool install`）进 PATH
     UV_TOOL_BIN_DIR = "$HOME/.local/bin";
+    # Go 模块走国内镜像（proxy.golang.org 慢；goproxy.cn 顺带代理 sumdb 校验）
+    GOPROXY = "https://goproxy.cn,direct";
   };
 }

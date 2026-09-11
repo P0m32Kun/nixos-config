@@ -39,6 +39,13 @@
   # ============ 打印 ============
   services.printing.enable = true;
 
+  # ============ 通用 Linux 二进制兼容（nix-ld） ============
+  # uv 托管的 Python（python-build-standalone）等面向通用 Linux 的动态链接二进制
+  # 依赖 /lib64/ld-linux-x86-64.so.2 与 FHS 库路径，NixOS 默认没有（stub-ld 报错）。
+  # 开启后提供 stub 动态链接器 + 常用库，uv 下载的 Python 即可直接运行。
+  # 参考：NixOS Wiki "Python quickstart using uv"；uv issue #17611
+  programs.nix-ld.enable = true;
+
   # ============ USB 存储（udisks2） ============
   # U 盘挂载基础设施；实际自动挂载由 home/apps.nix 的 udiskie 完成
   services.udisks2.enable = true;
