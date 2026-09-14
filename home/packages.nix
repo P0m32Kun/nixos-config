@@ -49,6 +49,9 @@
     wemeet # 腾讯会议
     wpsoffice-cn # WPS Office（中文版，原生中文界面；字体/输入法已就绪）
 
+    # ---- AI 编程客户端（overlay 打包，见 overlays/zcode.nix）----
+    zcode # 智谱 ZCode Desktop（GLM 官方 Harness）
+
     # ---- 开发/安全工具（nixpkgs 现有包）----
     go            # Go 工具链（gopls 已在 LSP 列表单独声明）
     nmap          # 网络扫描器
