@@ -7,6 +7,7 @@
 
     # 共享模块（多台机器时全部复用）
     ../../modules/base.nix          # 时区 / 语言 / 网络 / SSH / 打印
+    ../../modules/networking/tailscale.nix # Tailscale（Mesh VPN，客户端）
     ../../modules/mirrors.nix       # 国内镜像
     ../../modules/packages.nix      # 软件包
     ../../modules/desktop/hyprland.nix # 桌面环境（Hyprland，原 GNOME）
