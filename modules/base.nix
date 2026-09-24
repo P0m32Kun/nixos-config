@@ -28,6 +28,12 @@
   services.openssh = {
     enable = true;
     settings = {
+      # root 禁止 SSH 登录（任何认证方式，含密钥）。
+      # NixOS 默认是 prohibit-password——root 仍可用密钥登录；这里收紧为 no。
+      # 密码认证保持默认 yes（普通用户可密码登录，本机没有入站公钥）。
+      # 该组合（密码认证 + 22 对全网开放 + sudo 免密）的风险见
+      # docs/decisions/0003-passwordless-sudo.md。
+      PermitRootLogin = "no";
       ClientAliveInterval = 30;
       ClientAliveCountMax = 3;
     };

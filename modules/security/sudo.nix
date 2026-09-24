@@ -3,12 +3,20 @@
 # ============================================================
 # sudo 规则
 # ------------------------------------------------------------
-# 目的：允许 pi 等自动化工具免密执行 `sudo nixos-rebuild`，
-#       其余 sudo 命令仍要求密码。
-# 信任模型：能改本仓库 flake = 能通过 nixos-rebuild 拿到 root，
+# 目的：kun（本机唯一 wheel 成员）的 sudo 全免密，
+#       供 pi 等自动化工具免密执行 `sudo nixos-rebuild` 等管理命令。
+# 信任模型：能登录 kun = 能拿到 root；能改本仓库 flake = 能拿到 root。
 #       这是有意为之（agent 需要管理系统），不是漏洞。
+#       决策记录与残余风险见 docs/decisions/0003-passwordless-sudo.md。
 # ============================================================
 {
+  # ==== 核心开关：wheel 组免密 sudo ====
+  # 本机 wheel 成员只有 kun（modules/users/kun.nix），故等价于「kun 免密」。
+  # 副作用：日后若新增 wheel 用户，也会自动继承免密。
+  security.sudo.wheelNeedsPassword = false;
+
+  # 下面这条 nixos-rebuild 的 NOPASSWD 规则已被上面的
+  # wheelNeedsPassword = false 覆盖（后者是 ALL:ALL），保留无副作用。
   security.sudo.extraRules = [
     {
       users = [ "kun" ];
