@@ -26,4 +26,8 @@
       ];
     }
   ];
+  # 代理穿透 sudo：nixos-rebuild 前端的 flake 抓取（github 等）也要走代理；
+  security.sudo.extraConfig = ''
+    Defaults env_keep += "http_proxy https_proxy all_proxy no_proxy"
+  '';
 }
