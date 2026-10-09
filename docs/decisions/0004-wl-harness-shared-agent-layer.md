@@ -17,13 +17,13 @@ wl-harness 改为只导出 `homeManagerModules.default`（flake 无 inputs，用
 本仓库以 `git+file:///home/kun/Projects/wl-harness` 输入导入（`home/wl-harness.nix`）。
 模块**只**提供：
 
-- pinned skills（`shared/skills/sources.json` 的 rev+hash，nix 锁定）：ponytail、
-  i-have-adhd、mattpocock 的 to-spec/to-tickets/implement。mattpocock 其余与 agent-skills
-  已吸收的同名 skill（tdd/grill-me/code-review…）冲突，默认不链。
+- pinned skills：清单 `shared/skills/manifest.txt`（与 Mac 同一份），rev+hash 在
+  `shared/skills/sources.json`（nix 锁定）。本机用 `wl-harness.skills.exclude` 去掉与
+  agent-skills 同名的 code-review/grill-with-docs/grilling/tdd/wayfinder。
 - pick-agent skill。
 - codegraph MCP「只增不改」合并（首次改动前留 `*.wl-harness.bak`）。
 
-二进制仍按本仓库现有方式；Hindsight 接线交给它自己的 installer；Tailscale 已在
+Pi `settings.json` 模板（Hindsight pi.js 扩展 + pi-mcp-adapter）不在本机合并，Pi 配置仍归 Pi 自管（0001）。二进制仍按本仓库现有方式；Hindsight 接线交给它自己的 installer；Tailscale 已在
 `modules/networking/tailscale.nix`；`orca serve` 只在 Mac 跑。
 
 为什么 git+file 而不是 git+ssh：`sudo nixos-rebuild` 以 root 求值，root 没有 GitHub
