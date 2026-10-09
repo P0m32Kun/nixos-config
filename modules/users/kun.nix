@@ -19,5 +19,11 @@
     packages = with pkgs; [
       # 用户级软件包放这里（也可留空，用 home-manager 更彻底）
     ];
+    # 免密 SSH：Mac (kun@macbook) 的登录公钥
+    # 指纹 SHA256:SPX+5lkGOK/j1S7LA1XJ2gFlWJc9b2+Jc/VGV4rfUMk
+    # 生成 /etc/ssh/authorized_keys.d/kun（不碰 ~/.ssh/authorized_keys）
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDFduzxGvHUt1GArXDJ2SYLLx9feWlvGzCrb3V7q8xDD kun@macbook->nixos"
+    ];
   };
 }
