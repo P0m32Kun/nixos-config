@@ -11,7 +11,7 @@
 # 版本锁定：
 #   overlays/dsh/package.json + package-lock.json（npmmirror 解析）。
 # 升级流程（新版本发布时）：
-#   ./scripts/update-dsh.sh   # 自动：查版本→改版本号→重生成 lockfile→重算 hash→nix build 验证
+#   ./scripts/update.sh dsh    # 自动：查版本→改版本号→重生成 lockfile→重算 hash→nix build 验证
 #   sudo nixos-rebuild switch --flake /etc/nixos
 # ============================================================
 final: prev:
@@ -28,7 +28,7 @@ in
     # 包装项目：package.json + package-lock.json（锁定 @deepseek-ai/dsh 及全部传递依赖）
     src = ./dsh;
 
-    # 依赖树 hash（prefetch-npm-deps 计算，升级时由 scripts/update-dsh.sh 自动更新）
+    # 依赖树 hash（prefetch-npm-deps 计算，升级时由 scripts/update.sh dsh 自动更新）
     npmDepsHash = "sha256-E7XK8h8ub+oq8dJT51PfDGVpjSQkno7bUxBcESeScBI=";
 
     # dsh 发布包无 build 脚本（lib/ 已预编译）

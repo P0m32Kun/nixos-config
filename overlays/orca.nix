@@ -7,7 +7,7 @@
 #     type-2 标准结构，nixpkgs `appimageTools` 直接支持：
 #     extractType2 解包 + buildFHSEnv 补齐运行库，无需 FUSE / patchelf。
 #   - fetchurl 按 URL+hash 锁定，210MB 二进制不进 git；
-#     升级即改 version + hash 两处（./scripts/update-orca.sh 一键完成）。
+#     升级即改 version + hash 两处（./scripts/update.sh orca 一键完成）。
 #
 # 为什么留 nix（见 docs/decisions/0001）：
 #   - GUI 应用 → 留 nix 声明式管理。
@@ -24,7 +24,7 @@
 #   若启动报 SUID sandbox 相关错误，再在下面的 Exec 替换里补 --no-sandbox。
 #
 # 升级流程（新版本发布时）：
-#   ./scripts/update-orca.sh   # 查 GitHub 最新 tag→改 version→重算 hash→nix build 验证
+#   ./scripts/update.sh orca    # 查 GitHub 最新 tag→改 version→重算 hash→nix build 验证
 #   sudo nixos-rebuild switch --flake /etc/nixos
 # ============================================================
 final: prev:

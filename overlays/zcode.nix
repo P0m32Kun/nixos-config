@@ -19,7 +19,7 @@
 #   需要补 --no-sandbox 以实测为准（本机 userns 可用，多半走 namespace sandbox）。
 #
 # 升级流程（新版本发布时）：
-#   ./scripts/update-zcode.sh   # 抓官网最新版→改 version→重算 hash→nix build 验证
+#   ./scripts/update.sh zcode   # 抓官网最新版→改 version→重算 hash→nix build 验证
 #   sudo nixos-rebuild switch --flake /etc/nixos
 # ============================================================
 final: prev:
