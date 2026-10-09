@@ -281,11 +281,11 @@
     },
     "wl-harness": {
       "locked": {
-        "lastModified": 1791572109,
-        "narHash": "sha256-/ei/kXJEumVpUh4AV9FAAR+WOqypnXPuWnovU4t376A=",
+        "lastModified": 1791573353,
+        "narHash": "sha256-E7elNkr0h/edFL3IGnfou83Pv8PhNl0j43bhVMC/+30=",
         "ref": "refs/heads/main",
-        "rev": "f75a459ea36a49cf22a45bfab2e426dc9752d5fa",
-        "revCount": 6,
+        "rev": "aebcbdb642f9a6146795b6bb510abb9924db25d9",
+        "revCount": 8,
         "type": "git",
         "url": "file:///home/kun/Projects/wl-harness"
       },
