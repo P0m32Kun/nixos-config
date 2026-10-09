@@ -9,6 +9,17 @@
   virtualisation.libvirtd.enable = true;
   programs.virt-manager.enable = true;
 
+  # 模拟 TPM 2.0（swtpm）：Win11 安装/运行的硬性要求。
+  # 该选项把 pkgs.swtpm 加入 libvirtd.service 的 PATH。libvirt 用
+  # virFindFileInPath 在 $PATH 里找 swtpm / swtpm_setup / swtpm_ioctl，
+  # 找不到时 domcapabilities 的 tpm backendModel 只剩 passthrough
+  # （没有 emulator），virt-manager 就无法添加 TPM 设备。
+  #
+  # 不要设 qemu.verbatimConfig 的 swtpm_user / swtpm_group：libvirt 12.x 在
+  # privileged（NixOS 默认 qemu.runAsRoot = true）下，若系统无 tss 用户会
+  # 自动回退到 root；显式写一个不存在的用户会让 libvirtd 读配置直接失败。
+  virtualisation.libvirtd.qemu.swtpm.enable = true;
+
   # ============ Podman ============
   virtualisation.podman = {
     enable = true;
