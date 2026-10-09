@@ -52,6 +52,7 @@
     # ---- AI 编程客户端（overlay 打包，见 overlays/zcode.nix / overlays/orca.nix）----
     zcode # 智谱 ZCode Desktop（GLM 官方 Harness）
     orca-ide # Orca agent IDE（stablyai，官方 AppImage）
+    grok-bot # Grok Bot（Cursor/xAI 常驻 AI 队友桌面客户端，官方 AppImage）
 
     # ---- 开发/安全工具（nixpkgs 现有包）----
     go            # Go 工具链（gopls 已在 LSP 列表单独声明）
