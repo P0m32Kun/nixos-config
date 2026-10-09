@@ -250,7 +250,8 @@
         "lmclient": "lmclient",
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-unstable": "nixpkgs-unstable",
-        "noctalia": "noctalia"
+        "noctalia": "noctalia",
+        "wl-harness": "wl-harness"
       }
     },
     "uv2nix": {
@@ -276,6 +277,21 @@
         "owner": "pyproject-nix",
         "repo": "uv2nix",
         "type": "github"
+      }
+    },
+    "wl-harness": {
+      "locked": {
+        "lastModified": 1791571914,
+        "narHash": "sha256-27Rn3JqIIPZx9DKwiSMYPtAasOlT441DLeXta3aHyPU=",
+        "ref": "refs/heads/main",
+        "rev": "66a5d23efd18d4ea989d1af77db9035e00c4f69b",
+        "revCount": 2,
+        "type": "git",
+        "url": "file:///home/kun/Projects/wl-harness"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:///home/kun/Projects/wl-harness"
       }
     }
   },

@@ -38,5 +38,6 @@
     ./packages.nix # 用户级软件包（LSP/MCP 二进制等）
     ./hyprland.nix # Hyprland 桌面 dotfiles + 配套组件
     ./apps.nix     # Alacritty / Helix / Fish / Yazi / uv / Obsidian
+    ./wl-harness.nix # wl-harness 共享 agent 层（skills + codegraph MCP，见 decisions/0004）
   ];
 }

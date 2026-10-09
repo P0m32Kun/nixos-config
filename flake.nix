@@ -49,6 +49,13 @@
       url = "path:/home/kun/Projects/lmclient-nix";
       flake = true;
     };
+
+    # wl-harness：跨 Mac / NixOS 共享的 agent 层（pinned skills + codegraph MCP 合并）
+    # 只提供 home-manager 模块，不装任何 agent 二进制（见 docs/decisions/0004）。
+    # 私有仓库：用本地 clone 的 git+file（只取已提交文件，root 下 nixos-rebuild 也能读，
+    # 不依赖 root 的 GitHub 凭据）。更新：git -C ~/Projects/wl-harness pull
+    #   && nix flake update wl-harness
+    wl-harness.url = "git+file:///home/kun/Projects/wl-harness";
   };
 
   outputs = { self, nixpkgs, home-manager, hermes-agent, noctalia, ... }@inputs:
