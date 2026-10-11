@@ -59,6 +59,9 @@
     nmap          # 网络扫描器
     metasploit    # Metasploit 框架（msfconsole）
     gh            # GitHub 官方命令行工具
+
+    # ---- 录屏/直播（nixpkgs 现有包）----
+    obs-studio    # OBS Studio：录屏/推流；硬编依赖 intel-media-driver（见 modules/desktop/hyprland.nix）
   ];
 
   # playwright 浏览器：nixpkgs 托管，指向 playwright-driver 的浏览器包

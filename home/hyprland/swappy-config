@@ -1,0 +1,16 @@
+# swappy 截图标注器配置（由 home-manager 生成到 ~/.config/swappy/config）
+# 由 home/hyprland/scripts/screenshot-region.nix 调用
+#
+# 行为约定（对应 swappy 1.8.0 源码语义）：
+#   Ctrl+S → 按 save_dir/save_filename_format 另存标注版
+#   Ctrl+C → 标注版进剪贴板
+#   Esc / 点击窗口关闭 → auto_save=false 且未设 -o，故不写盘（保留 hyprshot 原图）
+[Default]
+save_dir=$HOME/Pictures/Screenshots
+save_filename_format=annotated_%Y-%m-%d_%H-%M-%S.png
+# 启动即显示标注工具栏（默认 false 是收起的，需 Ctrl+B 展开）
+show_panel=true
+# 退出时自动保存标注版（关掉，避免 Ctrl+S 后再 Esc 产生重复文件）
+auto_save=false
+# Ctrl+S / Ctrl+C 后是否直接退出（关掉，留着继续补画）
+early_exit=false

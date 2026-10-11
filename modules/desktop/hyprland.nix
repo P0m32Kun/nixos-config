@@ -56,6 +56,12 @@ in
 
   # ============ 图形驱动（Intel iGPU → mesa） ============
   hardware.graphics.enable = true;
+  # VA-API / QuickSync 硬编硬解运行时：驱动要落在 /run/opengl-driver/lib/dri，
+  # libva 才找得到 iHD（OBS 硬件编码依赖；缺了只能退回 x264 软编）
+  hardware.graphics.extraPackages = with pkgs; [
+    intel-media-driver # iHD VA-API 驱动（Arrow Lake-P 核显）
+    vpl-gpu-rt # oneVPL 运行时（QSV 编码）
+  ];
 
   # ============ 输入法：fcitx5 + 雾凇拼音（Rime） ============
   # （从原 gnome.nix 迁移；env 变量在 home/hyprland.nix 的 hypr/env.lua 里设）

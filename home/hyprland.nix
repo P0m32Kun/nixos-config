@@ -7,6 +7,7 @@ let
   hyprlandChangeLayout = import ./hyprland/scripts/hyprland-change-layout.nix { inherit pkgs; };
   hyprlandCycleWindow = import ./hyprland/scripts/hyprland-cycle-window.nix { inherit pkgs; };
   noctaliaMsg = import ./hyprland/scripts/noctalia-msg.nix { inherit pkgs; };
+  screenshotRegion = import ./hyprland/scripts/screenshot-region.nix { inherit pkgs; };
 
   # noctalia v5（C++ 版桌面外壳，来自 flake 输入，Cachix 缓存）
   noctaliaPkg = inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default;
@@ -90,7 +91,7 @@ in
   #   工作区预览                 → quickshell-overview
   #   壁纸守护                   → hyprpaper
   #   剪贴板历史                 → cliphist + wl-clipboard
-  #   截图                       → hyprshot（grim/slurp 封装）
+  #   截图                       → hyprshot（grim/slurp 封装）+ swappy 标注（screenshot-region）
   #   取色                       → hyprpicker
   #   输入法                     → fcitx5（保留）
   # ============================================================
@@ -125,6 +126,7 @@ in
     grim               # 截屏（hyprshot 后端）
     slurp              # 区域选择（hyprshot 后端）
     swappy             # 截图编辑
+    screenshotRegion   # 区域截图 → 落盘+剪贴板 → swappy 标注（可执行名 screenshot-region）
 
     # ---- 常用工具 ----
     playerctl          # 媒体控制（XF86 按键）
@@ -194,6 +196,12 @@ in
   # ============ Noctalia 配置（~/.config/noctalia/config.toml） ============
   home.file.".config/noctalia/config.toml" = {
     source = ./hyprland/noctalia-config.toml;
+  };
+
+  # ============ swappy（截图标注器）配置 ============
+  # screenshot-region 拉起 swappy 后：Ctrl+S 另存 annotated_*.png，Ctrl+C 复制标注版
+  home.file.".config/swappy/config" = {
+    source = ./hyprland/swappy-config;
   };
 
   # ============ quickshell-overview（工作区预览） ============
