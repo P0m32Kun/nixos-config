@@ -64,6 +64,9 @@
     nmap          # 网络扫描器
     metasploit    # Metasploit 框架（msfconsole）
     gh            # GitHub 官方命令行工具
+    rclone        # S3 兼容存储 CLI（provider=ChinaMobile 对移动云 EOS；STS 凭证填 session_token）
+    rclone-browser # rclone 的 Qt GUI：可视化浏览/下载桶内对象
+    awscli2       # AWS CLI v2：--endpoint-url + AWS_SESSION_TOKEN 做 S3 兼容取证
 
     # ---- 录屏/直播（nixpkgs 现有包）----
     obs-studio    # OBS Studio：录屏/推流；硬编依赖 intel-media-driver（见 modules/desktop/hyprland.nix）
