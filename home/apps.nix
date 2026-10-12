@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 # ============================================================
-# 用户应用：Alacritty + Starship + Fish + Yazi + uv + Obsidian
+# 用户应用：Alacritty + Starship + Fish + Yazi + mpv + uv + Obsidian
 # 全部通过 home-manager 模块声明式配置，随系统一起 rebuild
 # ============================================================
 {
@@ -277,6 +277,14 @@
         style = "maroon";
       };
     };
+  };
+
+  # ============ mpv（视频播放） ============
+  # hwdec=auto-safe：优先 Intel VA-API 硬解（iHD 驱动见 modules/desktop/hyprland.nix），
+  # 解不了就自动回落软解。mpv 上游默认是 no（纯软解），所以必须显式开。
+  programs.mpv = {
+    enable = true;
+    config.hwdec = "auto-safe";
   };
 
   # ============ Yazi（文件管理器） ============

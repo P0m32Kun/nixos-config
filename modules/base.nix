@@ -58,6 +58,9 @@
   services.udisks2.enable = true;
   boot.supportedFilesystems = [ "exfat" ];
 
+  # gvfs 守护：thunar 的「移到回收站」/ 网络位置依赖它（只装 home 里的 gvfs 包不够）
+  services.gvfs.enable = true;
+
   # ============ 回滚记录保留策略 ============
   # 只保留最近 10 个 system generation（`nixos-rebuild --rollback` 的回滚点）。
   # generation 是 GC root：每多一代，/nix/store 就多一份完整系统快照，

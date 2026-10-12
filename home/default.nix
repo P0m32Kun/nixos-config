@@ -33,6 +33,20 @@
   # 强制接管旧文件：GNOME 生成的 ~/.config/user-dirs.dirs 是普通文件，
   # home-manager 默认拒绝覆盖非符号链接文件，需 force 换成符号链接
   xdg.configFile."user-dirs.dirs".force = true;
+
+  # ============ 默认打开方式（mimeapps.list） ============
+  # 目录交给 thunar；zcode 的 deep-link 必须一起声明——该文件原先由 zcode
+  # 命令式写入（只有 x-scheme-handler/zcode 一行），纳入 nix 后由 HM 接管，
+  # 漏声明就会静默丢失。
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "inode/directory" = "thunar.desktop";
+      "x-scheme-handler/zcode" = "zcode.desktop";
+    };
+  };
+  # 原文件是普通文件（非符号链接），HM 默认拒绝覆盖，需 force（同 user-dirs.dirs）
+  xdg.configFile."mimeapps.list".force = true;
   # 按程序拆分子模块，新用户级配置在这里 import
   imports = [
     ./packages.nix # 用户级软件包（LSP/MCP 二进制等）
