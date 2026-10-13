@@ -1,0 +1,41 @@
+# CI 说明（与本地 scripts/check.sh 的分工）：
+# - push/PR 只做 nixfmt 格式检查——runner 上没有 wl-harness / lmclient
+#   两个本地路径输入，无法完整求值，明确不做 dry 构建
+# - 每周一定期刷新三个远端输入（nixpkgs / home-manager / noctalia）并开
+#   PR 供人工 review 后合并；本地输入（lmclient / wl-harness）不碰
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 20 * * 0" # UTC 周日 20:00 = 北京时间周一 04:00
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  format-check:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v16
+      - name: nixfmt check
+        run: nix run nixpkgs#nixfmt -- --check $(git ls-files '*.nix')
+
+  update-flake-lock:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v16
+      - uses: DeterminateSystems/update-flake-lock@v24
+        with:
+          inputs: nixpkgs home-manager noctalia
+          commit-msg: "chore(ci): 每周刷新远端 flake 输入"
+          pr-title: "chore(ci): 每周刷新远端 flake 输入"
+          pr-labels: dependencies
+          token: ${{ secrets.GITHUB_TOKEN }}
