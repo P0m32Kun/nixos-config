@@ -61,20 +61,27 @@
 
     # ---- 开发/安全工具（nixpkgs 现有包）----
     go            # Go 工具链（gopls 已在 LSP 列表单独声明）
+    jdk21         # Java 21 LTS 工具链（java/javac；JAVA_HOME 见下方 sessionVariables）
+    visualvm      # Java 分析 GUI：打开 .hprof 堆转储 / JFR / 远程 JMX 监控
     nmap          # 网络扫描器
     metasploit    # Metasploit 框架（msfconsole）
     gh            # GitHub 官方命令行工具
     rclone        # S3 兼容存储 CLI（provider=ChinaMobile 对移动云 EOS；STS 凭证填 session_token）
     rclone-browser # rclone 的 Qt GUI：可视化浏览/下载桶内对象
     awscli2       # AWS CLI v2：--endpoint-url + AWS_SESSION_TOKEN 做 S3 兼容取证
+    redis         # redis-cli：连远端/虚拟机里的 Redis 调试（顺带含 server 二进制）
 
     # ---- 录屏/直播（nixpkgs 现有包）----
     obs-studio    # OBS Studio：录屏/推流；硬编依赖 intel-media-driver（见 modules/desktop/hyprland.nix）
+
+    # ---- 远程连接（nixpkgs 现有包）----
+    freerdp       # FreeRDP 3（命令名 xfreerdp）：RDP 直连 KVM 里的 Windows（virbr0 NAT 网段，免端口转发）
   ];
 
   # playwright 浏览器：nixpkgs 托管，指向 playwright-driver 的浏览器包
   # （否则 playwright-mcp 运行时找不到浏览器）
   home.sessionVariables = {
     PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright-driver.browsers}";
+    JAVA_HOME = "${pkgs.jdk21.home}";
   };
 }
