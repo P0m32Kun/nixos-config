@@ -1,4 +1,10 @@
-{ config, lib, pkgs, inputs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 let
   # hyprland-btw 的辅助脚本（home.packages 里的可执行文件）
   rofiLegacyMenu = import ./hyprland/scripts/rofi-legacy.menu.nix { inherit pkgs; };
@@ -109,31 +115,31 @@ in
     noctaliaPkg
 
     # ---- Hyprland 配套 ----
-    hyprpaper          # 壁纸守护（startup.lua 启动）
-    hyprshot           # 截图（grim + slurp 封装）
-    hypridle           # 空闲管理
-    hyprlock           # 锁屏（noctalia 也会调）
-    hyprpicker         # 取色器
-    libnotify          # notify-send（noctalia/脚本通知）
+    hyprpaper # 壁纸守护（startup.lua 启动）
+    hyprshot # 截图（grim + slurp 封装）
+    hypridle # 空闲管理
+    hyprlock # 锁屏（noctalia 也会调）
+    hyprpicker # 取色器
+    libnotify # notify-send（noctalia/脚本通知）
     xdg-desktop-portal-hyprland
-    rofi               # 启动器（wayland 原生，rofi-wayland 已并入）
-    waybar             # 备用状态栏
-    quickshell         # quickshell-overview 运行时（qs 命令）
-    matugen             # Material You 取色（可选）
-    nwg-look           # GTK 设置 GUI
-    cliphist           # 剪贴板历史
-    wl-clipboard       # wl-copy / wl-paste
-    grim               # 截屏（hyprshot 后端）
-    slurp              # 区域选择（hyprshot 后端）
-    swappy             # 截图编辑
-    screenshotRegion   # 区域截图 → 落盘+剪贴板 → swappy 标注（可执行名 screenshot-region）
+    rofi # 启动器（wayland 原生，rofi-wayland 已并入）
+    waybar # 备用状态栏
+    quickshell # quickshell-overview 运行时（qs 命令）
+    matugen # Material You 取色（可选）
+    nwg-look # GTK 设置 GUI
+    cliphist # 剪贴板历史
+    wl-clipboard # wl-copy / wl-paste
+    grim # 截屏（hyprshot 后端）
+    slurp # 区域选择（hyprshot 后端）
+    swappy # 截图编辑
+    screenshotRegion # 区域截图 → 落盘+剪贴板 → swappy 标注（可执行名 screenshot-region）
 
     # ---- 常用工具 ----
-    playerctl          # 媒体控制（XF86 按键）
-    brightnessctl      # 亮度控制（XF86 按键）
-    pavucontrol        # 音量 GUI
+    playerctl # 媒体控制（XF86 按键）
+    brightnessctl # 亮度控制（XF86 按键）
+    pavucontrol # 音量 GUI
     networkmanagerapplet # 网络托盘（nm-applet）
-    hyprpolkitagent    # polkit 认证代理
+    hyprpolkitagent # polkit 认证代理
   ];
 
   # ============ GTK / 光标（Dracula 主题，hyprland-btw 风格） ============
@@ -264,7 +270,10 @@ in
   systemd.user.services.lmclient = {
     Unit = {
       Description = "Longmao Cloud (lmclient)";
-      After = [ "graphical-session.target" "noctalia.service" ];
+      After = [
+        "graphical-session.target"
+        "noctalia.service"
+      ];
       PartOf = [ "graphical-session.target" ];
     };
     Service = {

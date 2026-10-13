@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 # ============================================================
 # 用户应用：Alacritty + Starship + Fish + Yazi + mpv + uv + Obsidian
@@ -6,25 +11,25 @@
 # ============================================================
 {
   home.packages = with pkgs; [
-    uv          # Python 包/虚拟环境管理器（hermes 的官方运行时）
-    obsidian    # 笔记（Electron，Wayland 原生见 hyprland.nix 的 env）
+    uv # Python 包/虚拟环境管理器（hermes 的官方运行时）
+    obsidian # 笔记（Electron，Wayland 原生见 hyprland.nix 的 env）
     # 文件浏览辅助
     file
     ripgrep
     fd
     # 提效 CLI 工具
-    lazygit    # TUI git 客户端（diff/staging/分支可视化）
-    bat        # cat 高亮版（配 fzf 预览）
-    eza        # 现代 ls（图标/颜色/树形）
-    btop       # 系统监控（CPU/内存/网络/进程）
-    duf        # 磁盘用量一览
-    ncdu       # 交互式磁盘分析（找大文件）
-    tldr       # 命令速查（比 man 简洁）
+    lazygit # TUI git 客户端（diff/staging/分支可视化）
+    bat # cat 高亮版（配 fzf 预览）
+    eza # 现代 ls（图标/颜色/树形）
+    btop # 系统监控（CPU/内存/网络/进程）
+    duf # 磁盘用量一览
+    ncdu # 交互式磁盘分析（找大文件）
+    tldr # 命令速查（比 man 简洁）
     # 解压工具族（配合 extract 函数）
-    unzip      # zip 解压
-    p7zip      # 7z/7za：7z、rar 等多格式
-    unrar      # rar 原生解压
-    zip        # 创建 zip（与 unzip 配套）
+    unzip # zip 解压
+    p7zip # 7z/7za：7z、rar 等多格式
+    unrar # rar 原生解压
+    zip # 创建 zip（与 unzip 配套）
   ];
 
   # ============ Alacritty（终端） ============
@@ -100,16 +105,16 @@
     '';
     interactiveShellInit = lib.mkMerge [
       ''
-      # 别名
-      alias ll 'eza -lah --icons'
-      alias la 'eza -A'
-      alias l 'eza -F'
-      # 一键重建系统（与 rebuild.sh 一致）
-      alias rebuild 'sudo nixos-rebuild switch --flake /etc/nixos'
-      # 更新 flake 锁 + 重建
-      alias update 'nix flake update --flake /etc/nixos && sudo nixos-rebuild switch --flake /etc/nixos'
-      # nix 商店 GC
-      alias gc 'nix-collect-garbage -d'
+        # 别名
+        alias ll 'eza -lah --icons'
+        alias la 'eza -A'
+        alias l 'eza -F'
+        # 一键重建系统（与 rebuild.sh 一致）
+        alias rebuild 'sudo nixos-rebuild switch --flake /etc/nixos'
+        # 更新 flake 锁 + 重建
+        alias update 'nix flake update --flake /etc/nixos && sudo nixos-rebuild switch --flake /etc/nixos'
+        # nix 商店 GC
+        alias gc 'nix-collect-garbage -d'
       ''
       # atuin 接管 Ctrl-R：fzf 的 fish 集成用 mkOrder 200 绑定，mkAfter 保证 atuin 胜出
       (lib.mkAfter ''
@@ -304,9 +309,13 @@
   services.udiskie = {
     enable = true;
     settings = {
-      notify = true;   # 插入/挂载/弹出时桌面通知
+      notify = true; # 插入/挂载/弹出时桌面通知
       automount = {
-        options = [ "nosuid" "noexec" "nodev" ];
+        options = [
+          "nosuid"
+          "noexec"
+          "nodev"
+        ];
       };
     };
   };

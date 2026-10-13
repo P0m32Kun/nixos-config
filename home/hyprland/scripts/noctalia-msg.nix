@@ -1,4 +1,4 @@
-{pkgs}:
+{ pkgs }:
 pkgs.writeShellScriptBin "noctalia-msg" ''
   #!/usr/bin/env bash
   set -euo pipefail

@@ -1,4 +1,4 @@
-{pkgs}:
+{ pkgs }:
 pkgs.writeShellScriptBin "config-menu" ''
   #!/usr/bin/env bash
   set -euo pipefail

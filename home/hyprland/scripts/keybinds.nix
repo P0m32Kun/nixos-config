@@ -1,4 +1,4 @@
-{pkgs}:
+{ pkgs }:
 pkgs.writeShellScriptBin "keybinds" ''
   # Parse keybinds.lua (preferred) and create a rofi menu showing keybinds with descriptions.
   # Falls back to binds.conf for compatibility.

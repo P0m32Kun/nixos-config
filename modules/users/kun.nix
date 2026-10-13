@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # ============ 用户 kun ============
@@ -13,7 +18,15 @@
     # libvirtd：使用 virt-manager 管理 KVM 虚拟机；podman：连接 /run/podman/podman.sock
     # video: 亮度控制（brightnessctl 读 /sys/class/backlight）
     # audio/input: 传统设备组，Wayland 桌面常用
-    extraGroups = [ "networkmanager" "wheel" "libvirtd" "podman" "video" "audio" "input" ];
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+      "libvirtd"
+      "podman"
+      "video"
+      "audio"
+      "input"
+    ];
     # 默认 shell：fish（配置见 home/apps.nix 的 programs.fish）
     shell = pkgs.fish;
     packages = with pkgs; [

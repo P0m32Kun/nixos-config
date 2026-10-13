@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   imports = [
@@ -6,15 +11,15 @@
     ./hardware-configuration.nix
 
     # 共享模块（多台机器时全部复用）
-    ../../modules/base.nix          # 时区 / 语言 / 网络 / SSH / 打印
+    ../../modules/base.nix # 时区 / 语言 / 网络 / SSH / 打印
     ../../modules/networking/tailscale.nix # Tailscale（Mesh VPN，客户端）
-    ../../modules/mirrors.nix       # 国内镜像
-    ../../modules/packages.nix      # 软件包
+    ../../modules/mirrors.nix # 国内镜像
+    ../../modules/packages.nix # 软件包
     ../../modules/desktop/hyprland.nix # 桌面环境（Hyprland，原 GNOME）
     ../../modules/desktop/audio.nix # 声音
     ../../modules/security/fingerprint.nix # 指纹识别（fprintd + libfprint）
-    ../../modules/security/sudo.nix    # sudo 规则（pi 免密 nixos-rebuild）
-    ../../modules/users/kun.nix     # 用户
+    ../../modules/security/sudo.nix # sudo 规则（pi 免密 nixos-rebuild）
+    ../../modules/users/kun.nix # 用户
     ../../modules/virtualization.nix # KVM / Podman
 
     # 新机器迁移时：删掉上面"本机特有配置"下不需要的部分即可

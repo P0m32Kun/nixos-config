@@ -1,4 +1,4 @@
-{pkgs}:
+{ pkgs }:
 pkgs.writeShellScriptBin "hyprland-change-layout" ''
   #!/usr/bin/env bash
   set -euo pipefail

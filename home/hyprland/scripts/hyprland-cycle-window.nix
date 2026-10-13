@@ -1,4 +1,4 @@
-{pkgs}:
+{ pkgs }:
 pkgs.writeShellScriptBin "hyprland-cycle-window" ''
   #!/usr/bin/env bash
   set -euo pipefail

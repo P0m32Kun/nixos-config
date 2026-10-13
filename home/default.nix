@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # 用户 kun 的 home-manager 配置入口
@@ -10,7 +15,11 @@
     prefix=${config.home.homeDirectory}/.local
   '';
   # npm -g 装到 ~/.local（pi/context-mode 等自管工具落点）、pdtm/go install 落点，并进 PATH
-  home.sessionPath = [ "$HOME/.local/bin" "$HOME/.pdtm/go/bin" "$HOME/go/bin" ];
+  home.sessionPath = [
+    "$HOME/.local/bin"
+    "$HOME/.pdtm/go/bin"
+    "$HOME/go/bin"
+  ];
 
   # XDG 用户目录统一英文名（原为中文，避免工具/编码兼容问题）
   xdg.userDirs = {
@@ -51,7 +60,7 @@
   imports = [
     ./packages.nix # 用户级软件包（LSP/MCP 二进制等）
     ./hyprland.nix # Hyprland 桌面 dotfiles + 配套组件
-    ./apps.nix     # Alacritty / Helix / Fish / Yazi / uv / Obsidian
+    ./apps.nix # Alacritty / Helix / Fish / Yazi / uv / Obsidian
     ./wl-harness.nix # wl-harness 共享 agent 层（skills + codegraph MCP，见 decisions/0004）
   ];
 }

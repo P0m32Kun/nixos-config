@@ -1,4 +1,4 @@
-{pkgs}:
+{ pkgs }:
 pkgs.writeShellScriptBin "screenshot-region" ''
   #!/usr/bin/env bash
   # 区域截图 → 落盘 + 剪贴板 → 立刻进 swappy 标注

@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 # ============================================================
 # Hyprland 桌面（hyprland-btw 风格）
@@ -15,15 +20,17 @@ let
   #   - FormPosition/VirtualKeyboardPosition=center：登录框水平居中
   #   - ScreenWidth/ScreenHeight 留空：画布跟随实际分辨率（本机 eDP-1 3120x2080@2x，
   #     主题默认硬编码 1920x1080 会把登录框挤到左上角）
-  sddm-astronaut = (pkgs.sddm-astronaut.override {
-    embeddedTheme = "japanese_aesthetic";
-    themeConfig = {
-      FormPosition = "center";
-      VirtualKeyboardPosition = "center";
-      ScreenWidth = "";
-      ScreenHeight = "";
-    };
-  });
+  sddm-astronaut = (
+    pkgs.sddm-astronaut.override {
+      embeddedTheme = "japanese_aesthetic";
+      themeConfig = {
+        FormPosition = "center";
+        VirtualKeyboardPosition = "center";
+        ScreenWidth = "";
+        ScreenHeight = "";
+      };
+    }
+  );
 in
 {
   # ============ X11 基础（SDDM 与 XWayland 需要） ============
@@ -73,7 +80,10 @@ in
       pkgs.qt6Packages.fcitx5-chinese-addons
       (pkgs.fcitx5-rime.override {
         # 在默认 rime-data 之上叠加雾凇拼音（rime-ice）词典
-        rimeDataPkgs = with pkgs; [ rime-data rime-ice ];
+        rimeDataPkgs = with pkgs; [
+          rime-data
+          rime-ice
+        ];
       })
       # Catppuccin 主题（含 Mocha 全 14 种 accent，见 ~/.config/fcitx5/conf/classicui.conf）
       pkgs.catppuccin-fcitx5
@@ -83,7 +93,10 @@ in
   # ============ Wayland portals（屏幕共享等） ============
   xdg.portal = {
     enable = true;
-    config.common.default = [ "hyprland" "gtk" ];
+    config.common.default = [
+      "hyprland"
+      "gtk"
+    ];
   };
 
   # ============ 认证（hyprpolkitagent 需要） / dconf ============

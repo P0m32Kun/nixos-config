@@ -1,11 +1,17 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # ============ 国内镜像源（清华 TUNA） ============
   # 本机从 TUNA 镜像拉取二进制缓存，官方 cache.nixos.org 作为兜底
   nix.settings = {
     # 二进制缓存：优先 TUNA，失败时自动回退官方
-    substituters = lib.mkForce [ # mkForce：去掉 NixOS 默认附加导致的重复 cache.nixos.org
+    substituters = lib.mkForce [
+      # mkForce：去掉 NixOS 默认附加导致的重复 cache.nixos.org
       "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
       "https://cache.nixos.org"
       # noctalia 官方 Cachix（v5 C++ 版，避免本地编译）
@@ -17,7 +23,10 @@
       "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
     ];
     # 启用 flakes 与 nix 命令（GitHub 管理配置的基础）
-    experimental-features = [ "nix-command" "flakes" ];
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
     auto-optimise-store = true;
   };
 

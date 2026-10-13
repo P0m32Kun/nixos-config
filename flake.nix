@@ -4,7 +4,9 @@
   # noctalia 官方 Cachix 二进制缓存（避免本地编译 C++ 项目）
   nixConfig = {
     extra-substituters = [ "https://noctalia.cachix.org" ];
-    extra-trusted-public-keys = [ "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4=" ];
+    extra-trusted-public-keys = [
+      "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
+    ];
   };
 
   inputs = {
@@ -52,7 +54,14 @@
     wl-harness.url = "git+file:///home/kun/Projects/wl-harness";
   };
 
-  outputs = { self, nixpkgs, home-manager, noctalia, ... }@inputs:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      home-manager,
+      noctalia,
+      ...
+    }@inputs:
     let
       system = "x86_64-linux";
 
