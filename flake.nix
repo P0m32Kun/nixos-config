@@ -8,31 +8,22 @@
   };
 
   inputs = {
-    # 使用清华 TUNA 镜像的 nixpkgs（国内拉取速度快）
-    # 可选替代：
-    #   - 官方 GitHub（需要科学上网或较慢）："github:NixOS/nixpkgs/nixos-26.05"
-    #   - 中科大镜像： "https://mirrors.ustc.edu.cn/nix-channels/nixos-26.05/nixexprs.tar.xz"
-    nixpkgs.url = "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/nixos-26.05/nixexprs.tar.xz";
-
-    # unstable 输入只给 hermes-agent 的 nixpkgs follow 用（国内可达 + 版本语义一致）
-    nixpkgs-unstable.url = "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/nixos-unstable/nixexprs.tar.xz";
+    # nixpkgs 用官方 GitHub 的 git 协议（shallow）：锁里是真实 commit + 时间戳，
+    # 杜绝 channel tarball「无版本号 + 假时间戳（1980）」造成的锁漂移。
+    # 不用 github: 简写——它会走 GitHub REST API，代理共享出口 IP 的匿名限额
+    # （60 次/时）经常被打爆（实测 HTTP 403）；git+https 直连没有这个限制。
+    # 下载经代理（shell env 或 nix-daemon env，见 decisions/0002）；日常 rebuild
+    # 用已缓存的锁不碰网络，只有 `nix flake update` 需要代理在线；
+    # 二进制 substituters 仍走 TUNA store 镜像，不受影响。
+    # 国内无代理环境的替代（实测 TUNA git 服务晚高峰排队严重，非急勿用）：
+    #   "git+https://mirrors.tuna.tsinghua.edu.cn/git/nixpkgs.git?ref=nixos-26.05&shallow=1"
+    nixpkgs.url = "git+https://github.com/NixOS/nixpkgs.git?ref=nixos-26.05&shallow=1";
 
     # home-manager：声明式管理用户级配置，随系统一起更新
-    # 分支与 nixpkgs 的 26.05 对齐；nixpkgs 跟随主输入（TUNA 镜像）
+    # 分支与 nixpkgs 的 26.05 对齐；nixpkgs 跟随主输入
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    # hermes-agent（Nous Research）：通过 overlay 暴露 pkgs.hermes-agent，
-    # 声明式装进 home.packages（官方文档：
-    #   https://hermes-agent.nousresearch.com/docs/getting-started/nix-setup）
-    hermes-agent = {
-      url = "github:NousResearch/hermes-agent";
-      # nixpkgs 跟随本仓库的 TUNA 镜像 unstable 输入：
-      #   1) 国内可达，避免 github.com 大文件下载被墙中断
-      #   2) 与自己的 nixpkgs-unstable 同一 channel（版本语义一致）
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
     # noctalia v5（C++ 版，官方当前推荐版本；nixpkgs 里的 noctalia-shell 是
@@ -44,10 +35,13 @@
     };
 
     # lmclient（龙猫云_Lite）：本地独立 flake 打包的 ClashMeta 代理客户端
-    # （AppImage 在 lmclient-nix/ 目录，保持单一来源，不复制进本仓库）
+    # （AppImage 在 lmclient-nix/ 目录，保持单一来源，不复制进本仓库）。
+    # nixpkgs 跟随主输入，避免其内部默认的 TUNA tarball 输入在锁图里
+    # 再生一个假时间戳节点（锁漂移来源之一）
     lmclient = {
       url = "path:/home/kun/Projects/lmclient-nix";
       flake = true;
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # wl-harness：跨 Mac / NixOS 共享的 agent 层（pinned skills + codegraph MCP 合并）
@@ -58,7 +52,7 @@
     wl-harness.url = "git+file:///home/kun/Projects/wl-harness";
   };
 
-  outputs = { self, nixpkgs, home-manager, hermes-agent, noctalia, ... }@inputs:
+  outputs = { self, nixpkgs, home-manager, noctalia, ... }@inputs:
     let
       system = "x86_64-linux";
 
@@ -67,13 +61,9 @@
         (import ./overlays/pi-tools.nix) # codegraph（vendored node 需 autoPatchelf）
         (import ./overlays/herdr.nix)
         (import ./overlays/wechat.nix) # wechat：src 覆盖为官方 CDN（见 overlays/wechat.nix）
-        (import ./overlays/dsh.nix) # dsh：npm 打包 + --expose-internals wrapper（见 overlays/dsh.nix）
         (import ./overlays/zcode.nix) # zcode：官方 AppImage + appimageTools FHS 包装（见 overlays/zcode.nix）
         (import ./overlays/orca.nix) # orca-ide：官方 AppImage + appimageTools FHS 包装（见 overlays/orca.nix）
         (import ./overlays/grok-bot.nix) # grok-bot：Cursor/xAI Grok Bot 桌面版（官方 AppImage，见 overlays/grok-bot.nix）
-        # hermes-agent 官方 overlay：pkgs.hermes-agent = 其 flake 的 default 包
-        # （纯别名，构建用 hermes 自己锁定的 nixpkgs-unstable + uv2nix）
-        hermes-agent.overlays.default
       ];
     in
     {

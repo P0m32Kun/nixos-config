@@ -2,11 +2,11 @@
 # ============================================================
 # 统一的 overlay 自定义包升级脚本
 # （原 update-dsh.sh / update-orca.sh / update-zcode.sh /
-#   update-grok-bot.sh 四个脚本合并，逻辑原样保留）
+#   update-grok-bot.sh 四个脚本合并；dsh 已随决策 0005 删除）
 #
 # 用法：
 #   ./scripts/update.sh              # 依次更新全部
-#   ./scripts/update.sh orca zcode   # 只更新指定项（dsh/orca/zcode/grok-bot）
+#   ./scripts/update.sh orca zcode   # 只更新指定项（orca/zcode/grok-bot）
 #
 # 行为：
 #   - 每项独立执行，单项失败不中断其余，末尾输出汇总表；
@@ -46,42 +46,6 @@ build_verify() { # <attr>
 }
 
 # ---------- 各包更新逻辑 ----------
-
-# dsh：npm 最新版（npmmirror 解析），改 dsh.nix + package.json，
-#      重生成 lockfile，重算 npmDepsHash
-update_dsh() {
-  local REGISTRY="https://registry.npmmirror.com"
-  local NIX_FILE="overlays/dsh.nix"
-  local PKG_JSON="overlays/dsh/package.json"
-  local LOCK_FILE="overlays/dsh/package-lock.json"
-  local new old hash
-
-  new="$(npm view @deepseek-ai/dsh version --registry="$REGISTRY")"
-  old="$(sed -n 's/^    version = "\([^"]*\)";/\1/p' "$NIX_FILE")"
-  if [ "$old" = "$new" ]; then
-    echo "- $old → $new（已是最新）" > "$RESULT_DIR/dsh"; return 0
-  fi
-
-  sed -i "s/version = \"$old\"/version = \"$new\"/" "$NIX_FILE"
-  sed -i "s/\"@deepseek-ai\/dsh\": \"^$old\"/\"@deepseek-ai\/dsh\": \"^$new\"/" "$PKG_JSON"
-  echo "  版本号已更新：$old -> $new"
-
-  # 重新生成 lockfile（588+ 包可能需要一两分钟）
-  (cd overlays/dsh && npm install --package-lock-only --ignore-scripts \
-    --no-audit --no-fund --registry="$REGISTRY")
-  echo "  package-lock.json 已重新生成"
-
-  if command -v prefetch-npm-deps >/dev/null; then
-    hash="$(prefetch-npm-deps "$LOCK_FILE")"
-  else
-    hash="$(nix run nixpkgs#prefetch-npm-deps -- "$LOCK_FILE")"
-  fi
-  sed -i "s|npmDepsHash = \"sha256-[^\"]*\"|npmDepsHash = \"$hash\"|" "$NIX_FILE"
-  echo "  npmDepsHash 已更新"
-
-  build_verify dsh
-  echo "✓ $old → $new" > "$RESULT_DIR/dsh"
-}
 
 # orca：GitHub releases/latest 取最新 tag（资产名固定 orca-linux.AppImage）
 update_orca() {
@@ -194,13 +158,13 @@ update_grok_bot() {
 
 requested=("$@")
 if [ ${#requested[@]} -eq 0 ]; then
-  requested=(dsh orca zcode grok-bot)
+  requested=(orca zcode grok-bot)
 fi
 
 for t in "${requested[@]}"; do
   case "$t" in
-    dsh|orca|zcode|grok-bot) ;;
-    *) echo "✗ 未知项：$t（可用：dsh / orca / zcode / grok-bot）" >&2; exit 2 ;;
+    orca|zcode|grok-bot) ;;
+    *) echo "✗ 未知项：$t（可用：orca / zcode / grok-bot）" >&2; exit 2 ;;
   esac
 done
 

@@ -1,11 +1,11 @@
 { config, lib, pkgs, inputs, ... }:
 
 # ============================================================
-# 用户级软件包
-# 拆分原则（见 docs/decisions/0001）：
-#   - 稳定工具 / 系统依赖 / LSP 服务器 / GUI → 留在 nix 声明式
-#   - 自带更新机制的（pi 本体、pi 插件、MCP 二进制 context-mode/rtk）→
-#     已改 npm -g / 官方 release 自管到 ~/.local
+# 用户级软件包（慢层，nix 声明式）
+# 快慢分层原则见 docs/decisions/0001 + 0005：
+#   - 稳定工具 / 系统依赖 / LSP 服务器 / GUI → 留在本文件
+#   - 自带更新机制的（pi 全家桶、hermes-agent、context-mode/rtk、agy）→
+#     npm -g / uv tool 自管到 ~/.local，不进 nix
 # ============================================================
 {
   home.packages = with pkgs; [
@@ -30,15 +30,6 @@
 
     # ---- herdr（AI agent 终端工作区管理器，overlay 打包）----
     herdr
-    # ---- dsh（DeepSeek Harness CLI，overlay 打包）----
-    # npm 包 + --expose-internals wrapper（绕开 linux addon 的 HMR 故障，见 overlays/dsh.nix）
-    dsh
-    # ---- hermes-agent（Nous Research AI agent）----
-    # 来自 flake 输入 hermes-agent 的 overlay（官方 nix-setup 文档方案）。
-    # 首次构建较久（uv2nix 打包全部 Python 依赖，~700MB closure）。
-    # 密钥/配置在 ~/.hermes/（imperative，不进 nix store），
-    # 首次使用运行 `hermes setup`
-    hermes-agent
 
     # ---- 龙猫云_Lite（ClashMeta 代理客户端，本地 flake lmclient-nix 打包）----
     # 来自 flake 输入 lmclient（path:/home/kun/lmclient-nix）的 default 包
