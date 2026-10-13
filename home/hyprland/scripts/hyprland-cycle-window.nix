@@ -15,13 +15,14 @@ pkgs.writeShellScriptBin "hyprland-cycle-window" ''
     *) echo "Usage: $(basename "$0") [next|prev]" >&2; exit 1 ;;
   esac
 
+  # hyprctl dispatch needs a Lua dispatcher expression under the Lua config runtime.
   if [[ "$layout" == "master" || "$layout" == "monocle" ]]; then
-    ${pkgs.hyprland}/bin/hyprctl dispatch layoutmsg "cycle$action"
+    ${pkgs.hyprland}/bin/hyprctl dispatch "hl.dsp.layout('cycle$action')"
   else
     if [[ "$action" == "next" ]]; then
-      ${pkgs.hyprland}/bin/hyprctl dispatch cyclenext
+      ${pkgs.hyprland}/bin/hyprctl dispatch "hl.dsp.window.cycle_next()"
     else
-      ${pkgs.hyprland}/bin/hyprctl dispatch cyclenext prev
+      ${pkgs.hyprland}/bin/hyprctl dispatch "hl.dsp.window.cycle_next('prev')"
     fi
   fi
 ''

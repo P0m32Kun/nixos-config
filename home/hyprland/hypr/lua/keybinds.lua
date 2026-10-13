@@ -84,6 +84,16 @@ local function dispatch(name, args)
 				hl.dispatch(hl.dsp.focus({ workspace = id }))
 			end
 		end
+		local rel = args:match("^e([+-]%d+)$")
+		if rel and hl.dsp and hl.dsp.focus then
+			local offset = tonumber(rel)
+			return function()
+				local current = hl.get_active_workspace()
+				if current then
+					hl.dispatch(hl.dsp.focus({ workspace = current.id + offset }))
+				end
+			end
+		end
 		if args == "" then
 			return function() end
 		end
@@ -96,6 +106,19 @@ local function dispatch(name, args)
 			if id then
 				hl.dispatch(hl.dsp.window.move({ workspace = id }))
 			end
+		end
+	end
+
+	if name == "movetoworkspacesilent" and hl.dsp and hl.dsp.window and hl.dsp.window.move then
+		return function()
+			hl.dispatch(hl.dsp.window.move({ workspace = args, silent = true }))
+		end
+	end
+
+	if name == "togglespecialworkspace" and hl.dsp and hl.dsp.workspace and hl.dsp.workspace.toggle_special then
+		local short_name = args:gsub("^special:", "")
+		return function()
+			hl.dispatch(hl.dsp.workspace.toggle_special(short_name))
 		end
 	end
 
@@ -170,7 +193,8 @@ bindd("SUPER", "left", "Focus left", "movefocus", "l")
 bindd("SUPER", "right", "Focus right", "movefocus", "r")
 bindd("SUPER", "up", "Focus up", "movefocus", "u")
 bindd("SUPER", "down", "Focus down", "movefocus", "d")
-bindd("SUPER", "h", "Focus right", "movefocus", "r")
+bindd("SUPER", "H", "Hide window (scratchpad)", "movetoworkspacesilent", "special:scratchpad")
+bindd("SUPER SHIFT", "H", "Toggle scratchpad", "togglespecialworkspace", "special:scratchpad")
 bindd("SUPER", "J", "Cycle next", "exec", "hyprland-cycle-window next")
 bindd("SUPER", "K", "Cycle previous", "exec", "hyprland-cycle-window prev")
 bindd("", "XF86AudioRaiseVolume", "Volume up", "exec", "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+")
