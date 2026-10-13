@@ -86,7 +86,9 @@ sudo nixos-rebuild switch --rollback
 
 flake 依赖两个**本地路径输入**，换机前先就位（详见 AGENTS.md 的清单）：
 
-1. clone 本仓库到 `/etc/nixos`
+1. clone 本仓库（如 `~/nixos-config`），并建符号链接
+   `sudo ln -sfn ~/nixos-config /etc/nixos`（fish 的 `rebuild`/`update`
+   别名与本文档所有命令都走 `/etc/nixos`；本机即此布局）
 2. `~/Projects/wl-harness`（私有）与 `~/Projects/lmclient-nix` 两个目录就位
 3. `sudo nixos-generate-config --show-hardware-config > /etc/nixos/hosts/<主机名>/hardware-configuration.nix`
 4. `sudo NIX_CONFIG='experimental-features = nix-command flakes' nixos-rebuild switch --flake /etc/nixos#<主机名>`
