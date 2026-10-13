@@ -66,7 +66,8 @@
     obs-studio    # OBS Studio：录屏/推流；硬编依赖 intel-media-driver（见 modules/desktop/hyprland.nix）
 
     # ---- 远程连接（nixpkgs 现有包）----
-    freerdp       # FreeRDP 3（命令名 xfreerdp）：RDP 直连 KVM 里的 Windows（virbr0 NAT 网段，免端口转发）
+    freerdp       # FreeRDP 3 CLI（xfreerdp/wlfreerdp）：RDP 直连 KVM 里的 Windows；升级后可测 wlfreerdp 原生前端是否修复
+    remmina       # RDP/VNC/SPICE GUI 客户端：Win11 虚拟机日常连接（原生 Wayland，HiDPI/缩放/输入/光标均由 GTK 层正确处理）
   ];
 
   # playwright 浏览器：nixpkgs 托管，指向 playwright-driver 的浏览器包
