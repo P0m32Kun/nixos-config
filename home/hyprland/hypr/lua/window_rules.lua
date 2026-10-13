@@ -445,11 +445,11 @@ apply_window_rule({
 })
 
 apply_window_rule({
-  name = "Remmina",
+  name = "remmina-rdp",
   match = {
-    class = "^(org.remmina.Remmina)$",
+    class = "^([Rr]emmina|org\\.remmina\\.Remmina)$",
   },
-  float = true,
+  workspace = 5,
 })
 
 apply_window_rule({
@@ -775,14 +775,6 @@ apply_window_rule({
     tag = "games*",
   },
   no_blur = true,
-})
-
-apply_window_rule({
-  name = "Reminna",
-  match = {
-    class = "org.remmina.Reminna",
-  },
-  workspace = 8,
 })
 
 apply_window_rule({
