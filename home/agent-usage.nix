@@ -60,4 +60,19 @@ in
       WantedBy = [ "timers.target" ];
     };
   };
+
+  # noctalia 顶栏组件（plugin.toml + Luau）：seed 成真实文件复制
+  # （同 quickshell overview 先例——插件目录扫描 + Luau 热重载监听
+  # 需要普通文件，symlink 到 /nix/store 不可靠）。
+  # 首次部署后需启用一次：`noctalia msg plugins enable kun/agent-usage`
+  home.activation.seedNoctaliaAgentUsage = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    set -eu
+    DEST="$HOME/.local/share/noctalia/plugins/agent-usage"
+    SRC="${./agent-usage/plugin}"
+
+    mkdir -p "$HOME/.local/share/noctalia/plugins"
+    rm -rf "$DEST"
+    cp -R "$SRC" "$DEST"
+    chmod -R u+rwX "$DEST"
+  '';
 }

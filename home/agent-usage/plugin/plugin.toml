@@ -1,0 +1,30 @@
+# agent-usage 顶栏组件（noctalia 插件）
+# 数据源：~/.local/state/agent-usage/*.json（home-manager 的
+# agent-usage timer 每 15 分钟由 collect.py 原子写入，插件只读不算）。
+# 开发：改 .luau 热重载；改本清单需重载配置。
+# 面板：`noctalia msg panel-toggle kun/agent-usage:detail`
+
+id = "kun/agent-usage"
+name = "Agent Usage"
+version = "1.0.0"
+plugin_api = 26
+author = "kun"
+description = "本地 AI harness 的 token 用量（zcode/pi/codex/hermes），读 agent-usage 采集层"
+
+[[widget]]
+id = "usage"
+entry = "widget.luau"
+
+  [[widget.setting]]
+  key = "glyph"
+  type = "glyph"
+  label_key = "settings.glyph.label"
+  default = "bolt"
+
+[[panel]]
+id = "detail"
+entry = "panel.luau"
+width = 480
+height = 520
+placement = "floating"
+position = "center"

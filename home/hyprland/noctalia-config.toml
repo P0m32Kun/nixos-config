@@ -1,6 +1,6 @@
 [bar.default]
 center = [ "screenshot", "workspaces", "caffeine" ]
-end = [ "clock", "date", "tray", "notifications", "clipboard", "volume", "battery", "control-center", "session" ]
+end = [ "clock", "date", "tray", "kun/agent-usage:usage", "notifications", "clipboard", "volume", "battery", "control-center", "session" ]
 margin_ends = 20
 scale = 1.2500000111758709
 start = [ "launcher", "wallpaper", "active_window", "audio_visualizer" ]
