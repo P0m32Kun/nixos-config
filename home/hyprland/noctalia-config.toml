@@ -1,5 +1,5 @@
 [bar.default]
-center = [ "screenshot", "usage_gap", "kun/agent-usage:usage", "workspaces", "caffeine" ]
+center = [ "kun/agent-usage:usage", "usage_gap", "screenshot", "workspaces", "caffeine" ]
 end = [ "clock", "date", "tray", "notifications", "clipboard", "volume", "battery", "control-center", "session" ]
 margin_ends = 20
 scale = 1.2500000111758709
@@ -52,8 +52,14 @@ directory = "/home/kun/Pictures/Wallpapers"
 [wallpaper.monitors.eDP-1]
 path = "/home/kun/Pictures/Wallpapers/bluehour.jpg"
 
-# 截图组件与用量组件之间的固定间距（spacer 长 18px，
+# 用量组件与截图组件之间的固定间距（spacer 长 18px，
 # 默认 widget_spacing=6 显得太贴）
 [widget.usage_gap]
 type = "spacer"
 length = 18
+
+# 顶栏截图按钮与 Super+S 统一：都走 screenshot-region
+# （hyprshot 框选 → 落盘+剪贴板 → swappy 标注，见
+#  home/hyprland/scripts/screenshot-region.nix）
+[widget.screenshot.actions]
+left = "exec screenshot-region"
