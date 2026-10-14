@@ -28,6 +28,14 @@
       "flakes"
     ];
     auto-optimise-store = true;
+    # wheel 为受信任用户：否则 flake nixConfig 里声明的 cachix
+    # （如 noctalia）每次操作都要人工 y/N 确认，且客户端传的
+    # trusted-public-keys 会被 daemon 以 restricted setting 为由忽略。
+    # 安全性无实质变化：kun 本就免密 sudo（决策 0003）等同 root。
+    trusted-users = [
+      "root"
+      "@wheel"
+    ];
   };
 
   # ============ 网络代理（本机 127.0.0.1:7892） ============
