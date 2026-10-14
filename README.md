@@ -61,7 +61,7 @@ sudo nixos-rebuild switch --flake /etc/nixos
 ./scripts/update.sh              # 全部；或 ./scripts/update.sh zcode 只更一项
 
 # 快层工具升级（不随 rebuild）
-uv tool upgrade hermes-agent     # hermes
+hermes update                    # hermes（官方 install.sh 渠道；PyPI 渠道已停更勿用）
 pi update self                   # pi 本体
 
 # 改完配置先自检再 switch

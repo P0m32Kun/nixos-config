@@ -67,6 +67,8 @@
     rclone-browser # rclone 的 Qt GUI：可视化浏览/下载桶内对象
     awscli2 # AWS CLI v2：--endpoint-url + AWS_SESSION_TOKEN 做 S3 兼容取证
     redis # redis-cli：连远端/虚拟机里的 Redis 调试（顺带含 server 二进制）
+    psmisc # fuser/pkill 系：查块设备/挂载点被哪个进程占用（排查 U 盘无法弹出类问题）
+    lsof # 列出进程打开的文件/socket：与 psmisc 互补的占用排查工具
 
     # ---- 录屏/直播（nixpkgs 现有包）----
     obs-studio # OBS Studio：录屏/推流；硬编依赖 intel-media-driver（见 modules/desktop/hyprland.nix）

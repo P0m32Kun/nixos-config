@@ -64,3 +64,9 @@ lastModified 是 1980 假时间戳），锁随镜像滚动悄悄漂移，需要�
   grok-bot 同为 GUI），升级仍走 `scripts/update.sh`（范围缩小为三项）。
 - 新增 AI CLI 时先过快慢判定线：自带更新机制且 nix 包装无增益 → 快层；
   GUI / 不自更新 / 需要 patchelf → 慢层。
+- **快层选渠道先验明官方活跃分发渠道**（2026-10-14 hermes 教训）：
+  `uv tool install hermes-agent` 装到的 PyPI 停在 0.19.0（2026-07）且
+  `uv tool upgrade` 永远报"已最新"——渠道活着但已死。项目实际分发已迁到
+  官方 `install.sh`（git clone + 自管 Python/Node 运行时落
+  `~/.hermes/hermes-agent`，版本 v2026.9.24 稳定线）。装新快层工具前
+  先看官方 README 当前推荐的安装方式，而不是沿用历史认知里的包名。

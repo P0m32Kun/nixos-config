@@ -280,9 +280,13 @@ def collect_codex():
 
 def collect_hermes():
     root = HOME / ".hermes"
-    has_records = bool(list(root.glob("**/*usage*"))) if root.exists() else False
+    # 只看顶层：hermes-agent/ 是 900MB+ 的官方安装树（自带运行时），
+    # 递归 glob 会每轮白扫几千个文件；将来落了用量记录再接解析器
+    if root.exists():
+        has_records = any(root.glob("*usage*")) or any(root.glob("logs/*usage*"))
+    else:
+        has_records = False
     if has_records:
-        # 将来 hermes 落了用量记录，在这里接解析器
         pass
     return {**base_record("hermes", str(root)), "available": False,
             "reason": "hermes 未在本地持久化 token 用量（logs 无 token 字段）"}

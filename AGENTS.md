@@ -11,9 +11,11 @@
      系统依赖、LSP / MCP 二进制、稳定 CLI
 2. **快层 = `~/.local` 自管**（自带更新机制、原生渠道发布、nix 锁定只会
    拖慢或废掉它）：
-   - 判定线：「有原生更新命令，且不需要 patchelf / FHS 补丁」→ 快层
+   - 判定线：「有原生更新命令，且不需要 patchelf / FHS 补丁」→ 快层；
+     **选渠道先验明官方当前活跃的分发方式**（hermes 的 PyPI 渠道
+     停更就是教训，见 0005）
    - 现有：pi 全家桶（`npm -g`，`pi update self`）、hermes-agent
-     （`uv tool install` / `uv tool upgrade hermes-agent`）、agy、
+     （官方 `install.sh`，git 快照落 `~/.hermes/hermes-agent`）、agy、
      context-mode / rtk
    - npm 全局 prefix 已设 `~/.local`（`home/default.nix` 的 `.npmrc`），
      `~/.local/bin` 已进 PATH
@@ -75,5 +77,7 @@ docs/decisions/               # ADR（0001-0005）
 1. clone 本仓库到 `/etc/nixos`（GitHub: P0m32Kun/nixos-config）
 2. `~/Projects/wl-harness`：私有仓库 git clone（flake 输入 wl-harness 依赖）
 3. `~/Projects/lmclient-nix`：本地 flake（flake 输入 lmclient 依赖，含 AppImage 源）
-4. 快层重装：`npm i -g` pi 全家桶、`uv tool install hermes-agent`、agy 官方脚本
+4. 快层重装：`npm i -g` pi 全家桶、hermes 官方 `install.sh`（见
+   https://hermes-agent.nousresearch.com ，**勿用 PyPI 渠道**，已停更）、
+   agy 官方脚本
 5. 密钥恢复：`~/.pi/agent/auth.json`、`~/.hermes/`、SSH keys、tailscale 认证

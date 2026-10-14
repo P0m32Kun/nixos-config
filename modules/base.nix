@@ -66,6 +66,19 @@
   # gvfs 守护：thunar 的「移到回收站」/ 网络位置依赖它（只装 home 里的 gvfs 包不够）
   services.gvfs.enable = true;
 
+  # ============ 内核脏页上限（写回限流） ============
+  # 2026-10-14 排查「U 盘复制完无法弹出」的根因：大文件复制先进页缓存，
+  # 慢速 U 盘（实测 ~7.5MB/s 且盘载写缓存 disabled）回写需数分钟，峰值囤
+  # 1.4GB 脏页；期间 umount 在内核里阻塞 → 超过 udisks 25s D-Bus 超时 →
+  # udiskie 报「超时/设备或资源忙」。
+  # 改用绝对值上限后：脏页超限即对写者限流，复制进度如实反映介质真实
+  # 速度，umount/sync 秒级完成。设置 *_bytes 后内核忽略对应 *_ratio。
+  # 若日后觉得大文件落盘吞吐受限，可调大 dirty_bytes（单位：字节）。
+  boot.kernel.sysctl = {
+    "vm.dirty_background_bytes" = 52428800; # 50MB：后台回写启动线
+    "vm.dirty_bytes" = 209715200; # 200MB：硬上限，触线即同步限流
+  };
+
   # ============ 回滚记录保留策略 ============
   # 只保留最近 10 个 system generation（`nixos-rebuild --rollback` 的回滚点）。
   # generation 是 GC root：每多一代，/nix/store 就多一份完整系统快照，
