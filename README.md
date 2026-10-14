@@ -31,13 +31,12 @@ nixos-config/
 │   └── agent-usage.nix          #   agent token 用量监测（采集 + 15 分钟 timer）
 ├── overlays/                    # 不在 nixpkgs 的自定义包
 │   ├── pi-tools.nix             #   codegraph（autoPatchelf）
-│   ├── herdr.nix                #   herdr（静态二进制）
 │   ├── wechat.nix               #   微信（src 换官方 CDN）
 │   ├── zcode.nix / orca.nix / grok-bot.nix   # AI 桌面客户端（AppImage）
 ├── scripts/
 │   ├── update.sh                # 慢层 overlay 包升级（orca/zcode/grok-bot）
 │   └── check.sh                 # nixfmt + dry 构建冒烟
-├── docs/decisions/              # 决策记录（ADR 0001-0005）
+├── docs/decisions/              # 决策记录（ADR 0001-0006）
 └── .github/workflows/ci.yml     # push 格式检查 + 每周自动刷新远端输入开 PR
 ```
 
@@ -63,6 +62,7 @@ sudo nixos-rebuild switch --flake /etc/nixos
 # 快层工具升级（不随 rebuild）
 hermes update                    # hermes（官方 install.sh 渠道；PyPI 渠道已停更勿用）
 pi update self                   # pi 本体
+herdr update                     # herdr（官方 installer 渠道，herdr.dev/install）
 
 # 改完配置先自检再 switch
 ./scripts/check.sh               # nixfmt + dry 构建冒烟

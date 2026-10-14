@@ -1,6 +1,6 @@
 # 0005. AI 工具链快慢分层：dsh 删除、hermes-agent 移出 nix、nixpkgs 改 git 镜像
 
-- Status: accepted
+- Status: accepted（herdr 分类由 [0006](0006-herdr-fast-layer.md) 取代，移入快层）
 - Date: 2026-10-13
 
 ## Context

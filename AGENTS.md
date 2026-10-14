@@ -16,7 +16,8 @@
      停更就是教训，见 0005）
    - 现有：pi 全家桶（`npm -g`，`pi update self`）、hermes-agent
      （官方 `install.sh`，git 快照落 `~/.hermes/hermes-agent`）、agy、
-     context-mode / rtk
+     context-mode / rtk、herdr（官方 installer `herdr.dev/install` 落
+     `~/.local/bin`，升级 `herdr update`，见 0006）
    - npm 全局 prefix 已设 `~/.local`（`home/default.nix` 的 `.npmrc`），
      `~/.local/bin` 已进 PATH
 3. **禁止**：给慢层工具用 `curl | sh` / 手动下载二进制冒充声明式；给快层
@@ -46,7 +47,7 @@
 
 ```
 flake.nix                     # 输入 + nixosSystem（home-manager、overlays）
-overlays/                     # 不在 nixpkgs 的自定义包（codegraph/herdr/wechat/zcode/orca/grok-bot）
+overlays/                     # 不在 nixpkgs 的自定义包（codegraph/wechat/zcode/orca/grok-bot）
 scripts/update.sh             # 慢层 overlay 包升级（orca/zcode/grok-bot）
 scripts/check.sh              # nixfmt + dry 构建冒烟
 modules/                      # 系统级 NixOS 模块
@@ -60,7 +61,7 @@ home/
   wl-harness.nix              # wl-harness 共享 agent 层（skills + MCP 合并，见 0004）
   agent-usage.nix             # agent token 用量监测（采集 + timer + agent-usage 命令）
 hosts/nixos/                  # 本机配置（单机）
-docs/decisions/               # ADR（0001-0005）
+docs/decisions/               # ADR（0001-0006）
 ```
 
 ## 桌面（Hyprland）约定
@@ -79,5 +80,5 @@ docs/decisions/               # ADR（0001-0005）
 3. `~/Projects/lmclient-nix`：本地 flake（flake 输入 lmclient 依赖，含 AppImage 源）
 4. 快层重装：`npm i -g` pi 全家桶、hermes 官方 `install.sh`（见
    https://hermes-agent.nousresearch.com ，**勿用 PyPI 渠道**，已停更）、
-   agy 官方脚本
+   agy 官方脚本、herdr 官方 installer（https://herdr.dev/install）
 5. 密钥恢复：`~/.pi/agent/auth.json`、`~/.hermes/`、SSH keys、tailscale 认证

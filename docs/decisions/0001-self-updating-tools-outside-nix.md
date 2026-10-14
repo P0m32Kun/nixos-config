@@ -1,6 +1,6 @@
 # 0001. 自更新工具移出 nix，改由原生机制维护
 
-- Status: accepted（判定线已由 [0005](0005-fast-slow-layering.md) 升格为显式快慢两层规则；hermes-agent 由「留 nix」改为移出）
+- Status: accepted（判定线已由 [0005](0005-fast-slow-layering.md) 升格为显式快慢两层规则；hermes-agent 由「留 nix」改为移出；herdr 由「留 nix」改为移出，见 [0006](0006-herdr-fast-layer.md)）
 - Date: 2026-08-13
 
 ## Context

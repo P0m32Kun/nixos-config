@@ -68,7 +68,6 @@
       # 自定义包（不在 nixpkgs 的），按程序拆分子 overlay
       overlays = [
         (import ./overlays/pi-tools.nix) # codegraph（vendored node 需 autoPatchelf）
-        (import ./overlays/herdr.nix)
         (import ./overlays/wechat.nix) # wechat：src 覆盖为官方 CDN（见 overlays/wechat.nix）
         (import ./overlays/zcode.nix) # zcode：官方 AppImage + appimageTools FHS 包装（见 overlays/zcode.nix）
         (import ./overlays/orca.nix) # orca-ide：官方 AppImage + appimageTools FHS 包装（见 overlays/orca.nix）

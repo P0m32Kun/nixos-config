@@ -34,9 +34,6 @@
     typescript # ✅ 直接在顶层
     pkg-config # 帮助找依赖库
 
-    # ---- herdr（AI agent 终端工作区管理器，overlay 打包）----
-    herdr
-
     # ---- 龙猫云_Lite（ClashMeta 代理客户端，本地 flake lmclient-nix 打包）----
     # 来自 flake 输入 lmclient（path:/home/kun/lmclient-nix）的 default 包
     inputs.lmclient.packages.x86_64-linux.default
