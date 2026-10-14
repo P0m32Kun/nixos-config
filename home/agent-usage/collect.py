@@ -35,6 +35,38 @@ CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME", HOME / ".cache")) / "agent-usa
 
 TOKEN_KEYS = ("input", "output", "cache_read", "cache_write", "reasoning")
 
+# ---- 人民币成本（2026-10-14 调研官方牌价，元/百万 token）----
+# 智谱 GLM-5.3：输入8/输出28/缓存读2（缓存写限时免费）
+#   来源 docs.bigmodel.cn/cn/guide/start/pricing
+# 小米 mimo-v2.6-pro：3/6/0.025 来源 mimo.mi.com/docs/zh-CN/price/pay-as-you-go
+# DeepSeek flash 档（v4 已退役、与 v4.1 同价）：高峰2/8/0.04，空闲1/4/0.02，
+#   此处取峰谷均值近似 来源 api-docs.deepseek.com/zh-cn/quick_start/pricing
+# pi / hermes 上报的美元成本按下方汇率折算（更新牌价/汇率改这里）
+USD_CNY = 6.705
+CNY_PER_MTOK = {
+    "glm-5.3": {"input": 8, "output": 28, "cache_read": 2, "cache_write": 0},
+    "mimo-v2.6-pro": {"input": 3, "output": 6, "cache_read": 0.025, "cache_write": 0},
+    "deepseek-v4-flash": {"input": 1.5, "output": 6, "cache_read": 0.03, "cache_write": 0},
+    "deepseek-v4.1-flash": {"input": 1.5, "output": 6, "cache_read": 0.03, "cache_write": 0},
+    "deepseek-flash": {"input": 1.5, "output": 6, "cache_read": 0.03, "cache_write": 0},
+}
+
+
+def cost_cny_of(cost_usd, usage, model):
+    """上报成本优先（折算汇率）；无上报（订阅制）则按官方牌价估算"""
+    if cost_usd is not None and cost_usd > 0:
+        return cost_usd * USD_CNY
+    key = (model or "").lower()
+    for name, p in CNY_PER_MTOK.items():
+        if name in key:
+            return (
+                usage.get("input", 0) * p["input"]
+                + usage.get("output", 0) * p["output"]
+                + usage.get("cache_read", 0) * p["cache_read"]
+                + usage.get("cache_write", 0) * p["cache_write"]
+            ) / 1e6
+    return None
+
 
 def today_str() -> str:
     return dt.date.today().isoformat()
@@ -56,16 +88,19 @@ def new_bucket(**extra):
     b = {k: 0 for k in TOKEN_KEYS}
     b["requests"] = 0
     b["cost"] = 0.0
+    b["cost_cny"] = 0.0
     b.update(extra)
     return b
 
 
-def add_into(bucket, usage, cost=None, requests=1):
+def add_into(bucket, usage, cost=None, requests=1, cost_cny=None):
     for k in TOKEN_KEYS:
         bucket[k] += usage.get(k) or 0
     bucket["requests"] += requests
     if cost is not None:
         bucket["cost"] += cost
+    if cost_cny is not None:
+        bucket["cost_cny"] += cost_cny
 
 
 def in_days(day, days):
@@ -85,12 +120,15 @@ def summarize(rows, extra=None):
     days = {}
     for r in rows:
         reqs = r.get("requests", 1)
-        add_into(out["total"], r["usage"], r.get("cost"), reqs)
-        add_into(days.setdefault(r["date"], new_bucket()), r["usage"], r.get("cost"), reqs)
+        cc = r.get("cost_cny")
+        if cc is None:
+            cc = cost_cny_of(r.get("cost"), r["usage"], r.get("model"))
+        add_into(out["total"], r["usage"], r.get("cost"), reqs, cc)
+        add_into(days.setdefault(r["date"], new_bucket()), r["usage"], r.get("cost"), reqs, cc)
         m = out["by_model"].setdefault(r.get("model") or "unknown", new_bucket())
-        add_into(m, r["usage"], r.get("cost"), reqs)
+        add_into(m, r["usage"], r.get("cost"), reqs, cc)
         if in_days(r["date"], 7):
-            add_into(out["week"], r["usage"], r.get("cost"), reqs)
+            add_into(out["week"], r["usage"], r.get("cost"), reqs, cc)
     for d, b in sorted(days.items(), reverse=True):
         if in_days(d, 30):
             out["by_day"].append({"date": d, **b})
@@ -154,7 +192,8 @@ def collect_zcode():
             "cost": None,
         })
     con.close()
-    return {**base_record("zcode", f"{db}:model_usage"), **summarize(rows)}
+    return {**base_record("zcode", f"{db}:model_usage"), **summarize(rows),
+            "cost_note": "按智谱官方牌价估算（coding-plan 订阅制实际不按量计费）"}
 
 
 # ---------------- pi ----------------
@@ -225,7 +264,8 @@ def collect_pi():
     if not files:
         return {**base_record("pi", str(root)), "available": False,
                 "reason": f"未找到会话文件（{root}）"}
-    return {**base_record("pi", f"{root}/*/*.jsonl"), **summarize(rows)}
+    return {**base_record("pi", f"{root}/*/*.jsonl"), **summarize(rows),
+            "cost_note": f"pi 上报美元成本 × {USD_CNY} 折算"}
 
 
 # ---------------- codex ----------------
@@ -320,7 +360,8 @@ def collect_hermes():
             "requests": r["api_call_count"] or 1,
         })
     con.close()
-    return {**base_record("hermes", f"{db}:session_model_usage"), **summarize(rows)}
+    return {**base_record("hermes", f"{db}:session_model_usage"), **summarize(rows),
+            "cost_note": f"hermes estimated_cost_usd × {USD_CNY} 折算"}
 
 
 COLLECTORS = {"zcode": collect_zcode, "pi": collect_pi, "codex": collect_codex,

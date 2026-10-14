@@ -30,8 +30,8 @@ def fmt(n):
     return str(int(f))
 
 
-def fmt_cost(c):
-    return f"${c:.2f}" if c else "-"
+def fmt_cost(cny):
+    return f"¥{cny:.2f}" if cny else "-"
 
 
 def load_records():
@@ -63,8 +63,12 @@ def table(records):
             stale = " ⚠数据过期"
         lines.append(
             f"{r['agent']:8} {today:>26} {fmt(r['week']['input']):>8} "
-            f"{fmt(r['total']['input']):>8} {fmt_cost(r['total']['cost']):>7}  {models}{stale}"
+            f"{fmt(r['total']['input']):>8} {fmt_cost(r['total']['cost_cny']):>7}  {models}{stale}"
         )
+    note = {r.get("cost_note") for r in records if r.get("cost_note")}
+    if note:
+        lines.append("")
+        lines.extend(f"  · {n}" for n in sorted(note))
     return "\n".join(lines)
 
 

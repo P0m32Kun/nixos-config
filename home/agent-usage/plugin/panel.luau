@@ -18,7 +18,7 @@ end
 
 local function fmtCost(c)
   if c and c > 0 then
-    return ("$%.2f"):format(c)
+    return ("¥%.2f"):format(c)
   end
   return "-"
 end
@@ -95,7 +95,8 @@ local function agentCard(name, r)
       stat("今日 cache 读", fmt(t.cache_read)),
       stat("7 天 input", fmt(w.input)),
       stat("累计 input", fmt(tot.input)),
-      stat("累计成本", fmtCost(tot.cost)),
+      stat("今日成本", fmtCost(t.cost_cny)),
+      stat("累计成本", fmtCost(tot.cost_cny)),
     }),
   }
   if #(r.by_model or {}) > 0 then
@@ -111,10 +112,14 @@ end
 local function render()
   local cards = {}
   local collected = ""
+  local notes = {}
   for _, name in AGENTS do
     local r = readAgent(name)
     if r then
       collected = r.collected_at or ""
+      if r.cost_note then
+        table.insert(notes, name .. "：" .. r.cost_note)
+      end
       table.insert(cards, agentCard(name, r))
     end
   end
@@ -127,7 +132,11 @@ local function render()
       ui.button({ glyph = "close", onClick = "onCloseClicked" }),
     }),
     ui.scroll({ flexGrow = 1, gap = 12 }, cards),
-    ui.label({ text = "采集于 " .. collected .. " · timer 每 15 分钟刷新", fontSize = 10, color = "on_surface_variant" }),
+    ui.label({
+      text = "采集于 " .. collected .. " · timer 每 15 分钟刷新 · " .. table.concat(notes, "；"),
+      fontSize = 10,
+      color = "on_surface_variant",
+    }),
   }))
 end
 
