@@ -56,6 +56,7 @@ home/
   hyprland.nix                # Hyprland dotfiles + noctalia/lmclient 服务
   apps.nix                    # Alacritty / Helix / Fish / Yazi / uv / Obsidian
   wl-harness.nix              # wl-harness 共享 agent 层（skills + MCP 合并，见 0004）
+  agent-usage.nix             # agent token 用量监测（采集 + timer + agent-usage 命令）
 hosts/nixos/                  # 本机配置（单机）
 docs/decisions/               # ADR（0001-0005）
 ```

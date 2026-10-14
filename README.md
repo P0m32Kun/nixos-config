@@ -27,7 +27,8 @@ nixos-config/
 │   ├── packages.nix             #   用户级软件包（LSP/MCP/GUI/工具链）
 │   ├── hyprland.nix             #   Hyprland dotfiles + noctalia/lmclient 服务
 │   ├── apps.nix                 #   Alacritty / Helix / Fish / Yazi / uv / Obsidian
-│   └── wl-harness.nix           #   wl-harness 共享 agent 层（见 decisions/0004）
+│   ├── wl-harness.nix           #   wl-harness 共享 agent 层（见 decisions/0004）
+│   └── agent-usage.nix          #   agent token 用量监测（采集 + 15 分钟 timer）
 ├── overlays/                    # 不在 nixpkgs 的自定义包
 │   ├── pi-tools.nix             #   codegraph（autoPatchelf）
 │   ├── herdr.nix                #   herdr（静态二进制）
