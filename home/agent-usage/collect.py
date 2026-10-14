@@ -60,10 +60,10 @@ def new_bucket(**extra):
     return b
 
 
-def add_into(bucket, usage, cost=None):
+def add_into(bucket, usage, cost=None, requests=1):
     for k in TOKEN_KEYS:
         bucket[k] += usage.get(k) or 0
-    bucket["requests"] += 1
+    bucket["requests"] += requests
     if cost is not None:
         bucket["cost"] += cost
 
@@ -84,12 +84,13 @@ def summarize(rows, extra=None):
     }
     days = {}
     for r in rows:
-        add_into(out["total"], r["usage"], r.get("cost"))
-        add_into(days.setdefault(r["date"], new_bucket()), r["usage"], r.get("cost"))
+        reqs = r.get("requests", 1)
+        add_into(out["total"], r["usage"], r.get("cost"), reqs)
+        add_into(days.setdefault(r["date"], new_bucket()), r["usage"], r.get("cost"), reqs)
         m = out["by_model"].setdefault(r.get("model") or "unknown", new_bucket())
-        add_into(m, r["usage"], r.get("cost"))
+        add_into(m, r["usage"], r.get("cost"), reqs)
         if in_days(r["date"], 7):
-            add_into(out["week"], r["usage"], r.get("cost"))
+            add_into(out["week"], r["usage"], r.get("cost"), reqs)
     for d, b in sorted(days.items(), reverse=True):
         if in_days(d, 30):
             out["by_day"].append({"date": d, **b})
@@ -279,17 +280,47 @@ def collect_codex():
 # ---------------- hermes ----------------
 
 def collect_hermes():
-    root = HOME / ".hermes"
-    # 只看顶层：hermes-agent/ 是 900MB+ 的官方安装树（自带运行时），
-    # 递归 glob 会每轮白扫几千个文件；将来落了用量记录再接解析器
-    if root.exists():
-        has_records = any(root.glob("*usage*")) or any(root.glob("logs/*usage*"))
-    else:
-        has_records = False
-    if has_records:
-        pass
-    return {**base_record("hermes", str(root)), "available": False,
-            "reason": "hermes 未在本地持久化 token 用量（logs 无 token 字段）"}
+    # v0.22+（官方 install.sh 渠道）：~/.hermes/state.db 的
+    # session_model_usage 表按 session×model 聚合，含
+    # api_call_count 与 estimated_cost_usd；日期归属用 sessions.started_at
+    db = HOME / ".hermes/state.db"
+    if not db.exists():
+        return {**base_record("hermes", str(db)), "available": False,
+                "reason": f"未找到 {db}（hermes 尚未使用官方渠道安装/使用）"}
+    con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    con.row_factory = sqlite3.Row
+    rows = []
+    for r in con.execute(
+        """
+        SELECT u.session_id, u.model, u.input_tokens, u.output_tokens,
+               u.cache_read_tokens, u.cache_write_tokens, u.reasoning_tokens,
+               u.api_call_count, u.estimated_cost_usd, s.started_at
+        FROM session_model_usage u
+        LEFT JOIN sessions s ON s.id = u.session_id
+        """
+    ):
+        ts = r["started_at"] or 0
+        date = (
+            dt.datetime.fromtimestamp(float(ts)).date().isoformat()
+            if ts
+            else r["session_id"][:4] + "-" + r["session_id"][4:6] + "-" + r["session_id"][6:8]
+        )
+        rows.append({
+            "date": date,
+            "model": r["model"],
+            "session": r["session_id"],
+            "usage": {
+                "input": r["input_tokens"] or 0,
+                "output": r["output_tokens"] or 0,
+                "cache_read": r["cache_read_tokens"] or 0,
+                "cache_write": r["cache_write_tokens"] or 0,
+                "reasoning": r["reasoning_tokens"] or 0,
+            },
+            "cost": r["estimated_cost_usd"] or None,
+            "requests": r["api_call_count"] or 1,
+        })
+    con.close()
+    return {**base_record("hermes", f"{db}:session_model_usage"), **summarize(rows)}
 
 
 COLLECTORS = {"zcode": collect_zcode, "pi": collect_pi, "codex": collect_codex,
