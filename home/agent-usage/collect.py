@@ -110,9 +110,11 @@ def in_days(day, days):
 def summarize(rows, extra=None):
     """rows: [{date, model, usage{...}, cost}] → 汇总记录"""
     today = today_str()
+    month_prefix = today[:7]
     out = {
         "today": new_bucket(),
         "week": new_bucket(),
+        "month": new_bucket(),
         "total": new_bucket(),
         "by_day": [],
         "by_model": {},
@@ -129,6 +131,8 @@ def summarize(rows, extra=None):
         add_into(m, r["usage"], r.get("cost"), reqs, cc)
         if in_days(r["date"], 7):
             add_into(out["week"], r["usage"], r.get("cost"), reqs, cc)
+        if r["date"].startswith(month_prefix):
+            add_into(out["month"], r["usage"], r.get("cost"), reqs, cc)
     for d, b in sorted(days.items(), reverse=True):
         if in_days(d, 30):
             out["by_day"].append({"date": d, **b})

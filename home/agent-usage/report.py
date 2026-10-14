@@ -46,7 +46,10 @@ def load_records():
 
 def table(records):
     now = time.time()
-    header = f"{'agent':8} {'今日(in/out/cache)':>26} {'7天in':>8} {'总计in':>8} {'成本':>7}  模型(30天)"
+    header = (
+        f"{'agent':8} {'今日(in/out/cache)':>26} {'7天in':>8} {'本月in':>8} "
+        f"{'累计in':>8} {'本月¥':>8} {'累计¥':>8}  模型(30天)"
+    )
     lines = [header, "-" * len(header)]
     for r in records:
         if not r.get("available"):
@@ -63,7 +66,8 @@ def table(records):
             stale = " ⚠数据过期"
         lines.append(
             f"{r['agent']:8} {today:>26} {fmt(r['week']['input']):>8} "
-            f"{fmt(r['total']['input']):>8} {fmt_cost(r['total']['cost_cny']):>7}  {models}{stale}"
+            f"{fmt(r['month']['input']):>8} {fmt(r['total']['input']):>8} "
+            f"{fmt_cost(r['month']['cost_cny']):>8} {fmt_cost(r['total']['cost_cny']):>8}  {models}{stale}"
         )
     note = {r.get("cost_note") for r in records if r.get("cost_note")}
     if note:
