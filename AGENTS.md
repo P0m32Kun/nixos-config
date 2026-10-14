@@ -90,5 +90,8 @@ docs/decisions/               # ADR（0001-0006）
    `~/.local/state/noctalia/settings.toml`）
 6. 快层重装：`npm i -g` pi 全家桶、hermes 官方 `install.sh`（见
    https://hermes-agent.nousresearch.com ，**勿用 PyPI 渠道**，已停更）、
-   agy 官方脚本、herdr 官方 installer（https://herdr.dev/install）
+   agy 官方脚本、herdr 官方 installer（https://herdr.dev/install）；
+   hermes 装完把 `~/.hermes/config.yaml` 的 `skills.external_dirs` 指到
+   `${HOME}/.agents/skills`（hermes 默认不读共享技能目录，这是接入点；
+   `hermes skills list` 里 source=external 即生效）
 7. 密钥恢复：`~/.pi/agent/auth.json`、`~/.hermes/`、SSH keys、tailscale 认证
