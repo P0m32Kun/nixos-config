@@ -1,8 +1,12 @@
 --!nonstrict
 -- agent-usage 明细面板：每家 harness 一张卡片，只读采集层 JSON。
--- 卡片可拖拽排序（grip 拖动），底部「显示设置」勾选统计项——
--- 选择持久化在 ~/.local/state/agent-usage/panel-config.json
+-- 展示页纯展示；右上角齿轮进入设置页（Agent 显隐 / 统计项勾选），
+-- 卡片可拖拽排序。选择持久化在 ~/.local/state/agent-usage/panel-config.json
 -- （放 state 目录而非插件目录：插件的 seed 部署每次 rebuild 会覆盖）。
+--
+-- 面板能力边界（noctalia 插件面板为 layer-shell 表面）：大小固定
+-- （plugin.toml 声明，支持 "fill"），位置由宿主管理（center/auto），
+-- 不支持鼠标拖动、自由缩放与窗口式吸附。
 
 local STATE_DIR = "~/.local/state/agent-usage"
 local CONFIG_PATH = "~/.local/state/agent-usage/panel-config.json"
@@ -28,7 +32,7 @@ local function fmtCost(c)
   return "-"
 end
 
--- 可选统计项（勾选框按此顺序展示）
+-- 可选统计项（设置页勾选）
 local STAT_DEFS = {
   today = { b = "today", label = "今日 in/out", v = function(x)
     return ("%s / %s"):format(fmt(x.input), fmt(x.output))
@@ -57,18 +61,20 @@ local STAT_DEFS = {
 }
 local STAT_ORDER = { "today", "cache", "week", "month_in", "month_cost", "total_in", "cost_today", "cost_total" }
 
--- ============ 配置（勾选/拖拽的结果，持久化） ============
+-- ============ 配置（持久化） ============
 
 local function defaultConfig()
   return {
     stats = { "today", "cache", "month_in", "month_cost", "cost_total" },
     show_models = true,
     show_sparkline = true,
+    enabled = { zcode = true, pi = true, codex = true, hermes = true },
     order = { "zcode", "pi", "codex", "hermes" },
   }
 end
 
 local config = defaultConfig()
+local inSettings = false -- 面板当前页：false=展示页，true=设置页（不持久化）
 
 local function loadConfig()
   local raw = noctalia.readFile(CONFIG_PATH)
@@ -91,14 +97,21 @@ local function loadConfig()
   if type(decoded.order) == "table" then
     config.order = decoded.order
   end
+  if type(decoded.enabled) == "table" then
+    for _, name in AGENTS do
+      if decoded.enabled[name] ~= nil then
+        config.enabled[name] = decoded.enabled[name] == true or decoded.enabled[name] == "true"
+      end
+    end
+  end
 end
 
 local function saveConfig()
   noctalia.writeFile(CONFIG_PATH, noctalia.json.encode(config))
 end
 
--- config.order 只决定已知 agent 的顺序；新出现的 agent 追加到尾部
-local function orderedAgents()
+-- 全量顺序（含隐藏的 agent）；config.order 决定顺序，新 agent 追加尾部
+local function agentOrder()
   local known = {}
   for _, a in AGENTS do
     known[a] = true
@@ -118,7 +131,17 @@ local function orderedAgents()
   return out
 end
 
--- value 是 "agents:<index>"（插入区）或 "agents"（列表整体，追加到尾部）
+local function visibleAgents()
+  local out = {}
+  for _, name in agentOrder() do
+    if config.enabled[name] ~= false then
+      table.insert(out, name)
+    end
+  end
+  return out
+end
+
+-- value 是 "agents:<index>"（插入区）或 "agents"（列表整体，追加尾部）
 function onAgentDropped(payload, value)
   local indexText = string.match(value, "^agents:(%d+)$")
   local insertAt = indexText and tonumber(indexText) or #config.order + 1
@@ -258,9 +281,15 @@ local function agentCard(name, r)
   return ui.column({ gap = 10, fill = "surface", radius = 10, padding = 12 }, children)
 end
 
-local function toggleRow(label, checked, onChange)
+-- ============ 设置页 ============
+
+local function toggleRow(label, checked, onChange, hint)
+  local left = { ui.label({ text = label, fontSize = 12, color = "on_surface", flexGrow = 1 }) }
+  if hint then
+    table.insert(left, ui.label({ text = hint, fontSize = 10, color = "on_surface_variant" }))
+  end
   return ui.row({ align = "center", justify = "space_between", gap = 8 }, {
-    ui.label({ text = label, fontSize = 12, color = "on_surface", flexGrow = 1 }),
+    ui.row({ gap = 6, align = "center", flexGrow = 1 }, left),
     ui.toggle({ checked = checked, onChange = onChange, controlSize = "sm" }),
   })
 end
@@ -292,68 +321,99 @@ local function setStat(key, v)
   render()
 end
 
-local function settingsCard(records)
-  local left, right = {}, {}
-  for i, key in STAT_ORDER do
-    local def = STAT_DEFS[key]
-    local target = (i <= 4) and left or right
-    table.insert(target, toggleRow(def.label, table.find(config.stats, key) ~= nil, function(v)
+local function sectionTitle(text)
+  return ui.label({ text = text, fontSize = 12, fontWeight = "bold", color = "on_surface_variant" })
+end
+
+local function settingsView()
+  local agentToggles = {}
+  for _, name in agentOrder() do
+    table.insert(agentToggles, toggleRow(name, config.enabled[name] ~= false, function(v)
+      config.enabled[name] = v == true or v == "true"
+      saveConfig()
+      render()
+    end))
+  end
+
+  local statToggles = {}
+  for _, key in STAT_ORDER do
+    table.insert(statToggles, toggleRow(STAT_DEFS[key].label, table.find(config.stats, key) ~= nil, function(v)
       setStat(key, v)
     end))
   end
-  table.insert(right, toggleRow("模型分布行", config.show_models, function(v)
+  table.insert(statToggles, toggleRow("模型分布行", config.show_models, function(v)
     config.show_models = v == true or v == "true"
     saveConfig()
     render()
   end))
-  table.insert(right, toggleRow("30 天趋势线", config.show_sparkline, function(v)
+  table.insert(statToggles, toggleRow("30 天趋势线", config.show_sparkline, function(v)
     config.show_sparkline = v == true or v == "true"
     saveConfig()
     render()
   end))
-  return ui.column({ gap = 10, fill = "surface_variant/0.3", radius = 10, padding = 12 }, {
-    ui.label({ text = "显示设置（勾选即时生效并保存）", fontSize = 12, fontWeight = "bold", color = "on_surface_variant" }),
-    ui.row({ gap = 24, align = "start" }, {
-      ui.column({ gap = 6, flexGrow = 1 }, left),
-      ui.column({ gap = 6, flexGrow = 1 }, right),
+
+  return ui.column({ gap = 12, flexGrow = 1 }, {
+    sectionTitle("显示哪些 Agent"),
+    ui.column({ gap = 6, fill = "surface", radius = 10, padding = 12 }, agentToggles),
+    sectionTitle("卡片统计项"),
+    ui.column({ gap = 6, fill = "surface", radius = 10, padding = 12 }, statToggles),
+    ui.label({
+      text = "顺序：回到展示页拖动卡片左侧把手调整",
+      fontSize = 10,
+      color = "on_surface_variant",
     }),
+    ui.button({ text = "完成", variant = "primary", onClick = "onDoneClicked", controlSize = "md" }),
   })
 end
 
+-- ============ 主渲染 ============
+
 function render()
   loadConfigOnce()
-  local cards, collected, notes = {}, "", {}
-  for _, name in orderedAgents() do
-    local r = readAgent(name)
-    if r then
-      collected = r.collected_at or ""
-      if r.cost_note then
-        table.insert(notes, name .. "：" .. r.cost_note)
-      end
-      cards[#cards + 1] = insertionZone(#cards + 1)
-      cards[#cards + 1] = agentCard(name, r)
-    end
-  end
-  cards[#cards + 1] = insertionZone(#cards + 1)
+  local body
+  local collected, notes = "", {}
 
-  if #cards == 1 then
-    table.insert(cards, ui.label({ text = "暂无数据：先跑 agent-usage-collect", color = "on_surface_variant" }))
+  if inSettings then
+    body = ui.scroll({ flexGrow = 1, gap = 4 }, { settingsView() })
+  else
+    local cards = {}
+    for _, name in visibleAgents() do
+      local r = readAgent(name)
+      if r then
+        collected = r.collected_at or ""
+        if r.cost_note then
+          table.insert(notes, name .. "：" .. r.cost_note)
+        end
+        cards[#cards + 1] = insertionZone(#cards + 1)
+        cards[#cards + 1] = agentCard(name, r)
+      end
+    end
+    cards[#cards + 1] = insertionZone(#cards + 1)
+    if #cards == 1 then
+      table.insert(cards, ui.label({ text = "暂无数据：先跑 agent-usage-collect", color = "on_surface_variant" }))
+    end
+    body = ui.scroll({ flexGrow = 1, gap = 8 }, {
+      ui.dropZone({ accepts = { DRAG_TYPE }, value = "agents", onDrop = "onAgentDropped", gap = 8 }, cards),
+    })
   end
 
   panel.render(ui.column({ flexGrow = 1, gap = 12 }, {
     ui.row({ align = "center", justify = "space_between", gap = 8 }, {
-      ui.label({ text = "Agent 用量", fontSize = 16, fontWeight = "bold", color = "on_surface", flexGrow = 1 }),
+      ui.label({
+        text = inSettings and "Agent 用量 · 设置" or "Agent 用量",
+        fontSize = 16,
+        fontWeight = "bold",
+        color = "on_surface",
+        flexGrow = 1,
+      }),
+      ui.button({
+        glyph = inSettings and "arrow-left" or "settings",
+        tooltip = inSettings and "返回展示" or "设置",
+        onClick = "onToggleSettings",
+      }),
       ui.button({ glyph = "close", onClick = "onCloseClicked" }),
     }),
-    ui.scroll({ flexGrow = 1, gap = 8 }, {
-      ui.dropZone({
-        accepts = { DRAG_TYPE },
-        value = "agents",
-        onDrop = "onAgentDropped",
-        gap = 8,
-      }, cards),
-    }),
-    settingsCard(),
+    body,
     ui.label({
       text = "采集于 " .. collected .. " · timer 每 15 分钟刷新 · " .. table.concat(notes, "；"),
       fontSize = 10,
@@ -368,6 +428,16 @@ function loadConfigOnce()
     configLoaded = true
     loadConfig()
   end
+end
+
+function onToggleSettings()
+  inSettings = not inSettings
+  render()
+end
+
+function onDoneClicked()
+  inSettings = false
+  render()
 end
 
 function onOpen(_context)
