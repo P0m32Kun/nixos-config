@@ -75,10 +75,20 @@ docs/decisions/               # ADR（0001-0006）
 
 ## 换机/重装清单（flake 本地输入与快层依赖）
 
-1. clone 本仓库到 `/etc/nixos`（GitHub: P0m32Kun/nixos-config）
+1. clone 本仓库（GitHub: P0m32Kun/nixos-config，如 `~/nixos-config`），并建
+   符号链接 `sudo ln -sfn ~/nixos-config /etc/nixos`（fish 的 `rebuild`/`update`
+   别名与本文档命令都走 `/etc/nixos`；本机即此布局）
 2. `~/Projects/wl-harness`：私有仓库 git clone（flake 输入 wl-harness 依赖）
 3. `~/Projects/lmclient-nix`：本地 flake（flake 输入 lmclient 依赖，含 AppImage 源）
-4. 快层重装：`npm i -g` pi 全家桶、hermes 官方 `install.sh`（见
+4. 新机生成 `hosts/nixos/hardware-configuration.nix`
+   （`nixos-generate-config` 后替换）；**显示器名不同**的改
+   `home/hyprland/noctalia-config.toml` 与 `hypr/lua/monitors.lua` 里的
+   `eDP-1`；N 卡机器另需动 `modules/desktop/hyprland.nix` 的 Intel 驱动段
+5. 首次 rebuild 并登录后，启用 noctalia 插件一次：
+   `noctalia msg plugins enable kun/agent-usage`（插件文件由
+   home-manager seed 自动就位，但启用状态是 imperative 的，存
+   `~/.local/state/noctalia/settings.toml`）
+6. 快层重装：`npm i -g` pi 全家桶、hermes 官方 `install.sh`（见
    https://hermes-agent.nousresearch.com ，**勿用 PyPI 渠道**，已停更）、
    agy 官方脚本、herdr 官方 installer（https://herdr.dev/install）
-5. 密钥恢复：`~/.pi/agent/auth.json`、`~/.hermes/`、SSH keys、tailscale 认证
+7. 密钥恢复：`~/.pi/agent/auth.json`、`~/.hermes/`、SSH keys、tailscale 认证
