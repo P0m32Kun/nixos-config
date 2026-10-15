@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 
@@ -33,10 +32,6 @@
     yarn # ✅ 直接在顶层
     typescript # ✅ 直接在顶层
     pkg-config # 帮助找依赖库
-
-    # ---- 龙猫云_Lite（ClashMeta 代理客户端，本地 flake lmclient-nix 打包）----
-    # 来自 flake 输入 lmclient（path:/home/kun/lmclient-nix）的 default 包
-    inputs.lmclient.packages.x86_64-linux.default
 
     # ---- 通讯/会议（nixpkgs 现有包；unfree 已在 modules/packages.nix 允许）----
     wechat # 微信（官方 Linux 版）

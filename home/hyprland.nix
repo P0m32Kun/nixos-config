@@ -47,8 +47,9 @@ let
     exec ${noctaliaPkg}/bin/noctalia
   '';
 
-  # 龙猫云_Lite（ClashMeta 代理客户端，本地 flake lmclient-nix 打包，见 home/packages.nix）
-  lmclientPkg = inputs.lmclient.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  # 龙猫云_Lite（ClashMeta 代理客户端）：**临时工具，不进 flake**（decisions/0008）。
+  # 由用户自行安装（通常落 ~/.local/bin/lmclient），下面的 launcher 从 PATH 解析，
+  # 没装就干净跳过——所以它是可选的，缺失不影响 rebuild 或启动。
 
   # 等待 Wayland socket + noctalia 的 SNI 托盘 watcher 就绪后再启动 lmclient。
   # QSystemTrayIcon 在宿主未就绪时注册会静默丢失且不重试（托盘图标消失根因）。
@@ -82,7 +83,16 @@ let
       ${pkgs.systemd}/bin/busctl --user get-property org.kde.StatusNotifierWatcher /StatusNotifierWatcher org.kde.StatusNotifierWatcher IsStatusNotifierHostRegistered >/dev/null 2>&1 && break
       ${pkgs.coreutils}/bin/sleep 0.2
     done
-    exec ${lmclientPkg}/bin/lmclient
+    # 二进制从 PATH / ~/.local/bin 解析；未安装则干净退出（可选工具，不阻塞会话）
+    lmclient_bin="$(command -v lmclient 2>/dev/null || true)"
+    if [ -z "$lmclient_bin" ] && [ -x "$HOME/.local/bin/lmclient" ]; then
+      lmclient_bin="$HOME/.local/bin/lmclient"
+    fi
+    if [ -z "$lmclient_bin" ]; then
+      echo "lmclient-launcher: lmclient 未安装（临时可选工具），跳过" >&2
+      exit 0
+    fi
+    exec "$lmclient_bin"
   '';
 in
 {

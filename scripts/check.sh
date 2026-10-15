@@ -29,7 +29,7 @@ fi
 
 echo
 echo "===== 2/2 整机求值冒烟（dry-run） ====="
-# 需要 wl-harness / lmclient 两个本地输入就位，故只在本地跑，CI 不做这步
+# 需要 wl-harness 本地输入就位，故只在本地跑，CI 不做这步
 if nix build .#nixosConfigurations.nixos.config.system.build.toplevel --dry-run; then
   echo "✓ 求值通过"
 else

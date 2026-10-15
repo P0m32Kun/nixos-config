@@ -64,8 +64,11 @@
   即可恢复系统与 agent 工作方式；agent 能读清单自助补齐，无需维护逐工具
   安装脚本；配置与凭据分离，凭据不进 git。
 - **残余风险（明确接受）**：
-  - `lmclient-nix` 不在 git（含 64MB AppImage），换机必须从备份还原到
-    `flake.nix` 声明的绝对路径；`install-from-clone.sh` 只校验不代装。
+  - ~~`lmclient-nix` 不在 git（含 64MB AppImage），换机必须从备份还原到
+    `flake.nix` 声明的绝对路径~~ **已解除（2026-10-15）**：lmclient 是
+    临时代理客户端，按"工具下载可脚本化"原则移出 flake（删 input +
+    `home/packages.nix` 引用）；`home/hyprland.nix` 的 launcher 改为从
+    PATH / `~/.local/bin` 解析，未安装即干净跳过。换机不再需要该目录。
   - agent baseline 的模板默认值会补进缺失键（如 pi `defaultModel`），
     属"seed-if-missing"而非纯 no-op；用户已有值永远优先。
   - `agent-check.sh` 的 `--install` 与 activation 覆盖同一批事实，理论上

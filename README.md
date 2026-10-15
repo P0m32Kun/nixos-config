@@ -25,7 +25,7 @@ nixos-config/
 ├── home/                        # home-manager 用户级配置
 │   ├── default.nix              #   入口（imports 注册处）
 │   ├── packages.nix             #   用户级软件包（LSP/MCP/GUI/工具链）
-│   ├── hyprland.nix             #   Hyprland dotfiles + noctalia/lmclient 服务
+│   ├── hyprland.nix             #   Hyprland dotfiles + noctalia 服务 + lmclient launcher（可选）
 │   ├── apps.nix                 #   Alacritty / Helix / Fish / Yazi / uv / Obsidian
 │   ├── wl-harness.nix           #   wl-harness 共享 agent 层（见 decisions/0004）
 │   ├── agent-usage.nix          #   agent token 用量监测（采集 + 15 分钟 timer）
@@ -83,12 +83,14 @@ sudo nixos-rebuild switch --rollback
   TUNA git 镜像排队严重仅作无代理备选）
 - **二进制缓存**：`modules/mirrors.nix` 的 substituters 优先 TUNA store 镜像，
   官方兜底，另有 noctalia 官方 cachix
-- **nix-daemon 代理**：github.com 等下载走 `127.0.0.1:7892`（lmclient），
-  无代理时删掉 `modules/mirrors.nix` 对应 block 即可
+- **nix-daemon 代理**：github.com 等下载走 `127.0.0.1:7892`（龙猫云_Lite，
+  临时代理客户端、不进 flake，见下）；无代理时删掉 `modules/mirrors.nix`
+  对应 block 即可
 
 ## 换机/重装
 
-flake 依赖两个**本地路径输入**，换机前先就位（详见 AGENTS.md 的清单）。
+flake 依赖**一个本地路径输入**（wl-harness，私有仓库），换机前先就位
+（详见 AGENTS.md 的清单）。
 
 **一键引导**（幂等，自动校验前置 + 建符号链接 + check.sh + rebuild）：
 
@@ -102,8 +104,10 @@ flake 依赖两个**本地路径输入**，换机前先就位（详见 AGENTS.md
 1. clone 本仓库（如 `~/nixos-config`），并建符号链接
    `sudo ln -sfn ~/nixos-config /etc/nixos`（fish 的 `rebuild`/`update`
    别名与本文档所有命令都走 `/etc/nixos`；本机即此布局）
-2. `~/Projects/wl-harness`（私有）与 `~/Projects/lmclient-nix` 两个目录就位
-   （lmclient-nix **不在 git**，含 64MB AppImage，须从备份还原到该绝对路径）
+2. `~/Projects/wl-harness`（私有）就位。龙猫云_Lite（lmclient）是**临时代理
+   客户端，已不进 flake**：要用时装到 PATH 或 `~/.local/bin`，
+   `home/hyprland.nix` 的 launcher 会自动发现并启动，没装就干净跳过，
+   不影响 rebuild 或会话。
 3. `sudo nixos-generate-config --show-hardware-config > /etc/nixos/hosts/<主机名>/hardware-configuration.nix`
 4. `sudo NIX_CONFIG='experimental-features = nix-command flakes' nixos-rebuild switch --flake /etc/nixos#<主机名>`
 5. 快层重装（`npm i -g` pi 全家桶、hermes 官方 `install.sh`——**勿用 PyPI 渠道**

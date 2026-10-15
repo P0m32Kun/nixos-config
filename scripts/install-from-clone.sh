@@ -5,7 +5,7 @@
 # 用法：./scripts/install-from-clone.sh [--dry-run] [--no-rebuild]
 #
 # 做什么（顺序）：
-#   1. 校验 flake 依赖就位（wl-harness / lmclient-nix）——缺哪个就报哪个
+#   1. 校验 flake 依赖就位（wl-harness 必需；lmclient-nix 仅可选/临时）
 #   2. 建 /etc/nixos -> 本仓库 的符号链接（fish 的 rebuild/update 别名都走 /etc/nixos）
 #   3. 硬件配置就位检查（缺就给出 nixos-generate-config 命令，不自动覆盖）
 #   4. ./scripts/check.sh（nixfmt + 整机求值冒烟）
@@ -52,18 +52,11 @@ else
 fi
 
 if [ -d "$LM_DIR" ]; then
-  ok "lmclient-nix: $LM_DIR"
-  if [ -f "$LM_DIR/flake.nix" ]; then
-    ok "lmclient-nix/flake.nix 存在"
-  else
-    miss "lmclient-nix 缺 flake.nix（目录内容不完整）"
-    BLOCKED=1
-  fi
+  ok "lmclient-nix: $LM_DIR（可选/临时，已不进 flake）"
 else
-  miss "lmclient-nix 未就位：$LM_DIR"
-  fail "该目录**不在 git 里**（含 64MB AppImage + 图标 + flake），无法 clone"
-  fail "必须从备份还原到 $LM_DIR（路径要与 flake.nix 的 path: 输入完全一致）"
-  BLOCKED=1
+  info "lmclient-nix 不存在：$LM_DIR（**可选**，不阻塞部署）"
+  info "  龙猫云_Lite 是临时代理客户端，不进 flake；要用时装到 PATH 或 ~/.local/bin 即可"
+  info "  home/hyprland.nix 的 launcher 会自动发现它，没装就干净跳过"
 fi
 
 echo

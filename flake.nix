@@ -36,16 +36,6 @@
       url = "github:noctalia-dev/noctalia/cachix";
     };
 
-    # lmclient（龙猫云_Lite）：本地独立 flake 打包的 ClashMeta 代理客户端
-    # （AppImage 在 lmclient-nix/ 目录，保持单一来源，不复制进本仓库）。
-    # nixpkgs 跟随主输入，避免其内部默认的 TUNA tarball 输入在锁图里
-    # 再生一个假时间戳节点（锁漂移来源之一）
-    lmclient = {
-      url = "path:/home/kun/Projects/lmclient-nix";
-      flake = true;
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # wl-harness：跨 Mac / NixOS 共享的 agent 层（pinned skills + codegraph MCP 合并）
     # 只提供 home-manager 模块，不装任何 agent 二进制（见 docs/decisions/0004）。
     # 私有仓库：用本地 clone 的 git+file（只取已提交文件，root 下 nixos-rebuild 也能读，

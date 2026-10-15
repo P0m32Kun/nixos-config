@@ -39,8 +39,9 @@
 
 - flake 输入：nixpkgs（GitHub **git 协议** shallow，锁真实 commit，见 0005；
   勿用 `github:` 简写——REST API 限额会 403）、home-manager、noctalia
-  （官方 cachix 分支，**勿加** nixpkgs.follows）、lmclient（本地 path）、
-  wl-harness（本地 git+file）
+  （官方 cachix 分支，**勿加** nixpkgs.follows）、
+  wl-harness（本地 git+file）。lmclient（龙猫云_Lite）是**临时代理客户端，
+  已不进 flake**，装到 PATH / `~/.local/bin` 即可
 - 升级 = `nix flake update` + `sudo nixos-rebuild switch --flake /etc/nixos`；
   三个远端输入由 CI 每周自动刷新并开 PR
 - wl-harness 更新：`git -C ~/Projects/wl-harness pull && nix flake update wl-harness`
@@ -60,7 +61,7 @@ modules/                      # 系统级 NixOS 模块
 home/
   default.nix                 # 用户级模块入口（imports 注册处）
   packages.nix                # 用户级软件包（LSP/MCP/GUI/工具链）
-  hyprland.nix                # Hyprland dotfiles + noctalia/lmclient 服务
+  hyprland.nix                # Hyprland dotfiles + noctalia 服务 + lmclient launcher（可选）
   apps.nix                    # Alacritty / Helix / Fish / Yazi / uv / Obsidian
   wl-harness.nix              # wl-harness 共享 agent 层（skills + MCP 合并，见 0004）
   agent-usage.nix             # agent token 用量监测（采集 + timer + agent-usage 命令）
@@ -88,9 +89,9 @@ docs/decisions/               # ADR（0001-0008）
    符号链接 `sudo ln -sfn ~/nixos-config /etc/nixos`（fish 的 `rebuild`/`update`
    别名与本文档命令都走 `/etc/nixos`；本机即此布局）
 2. `~/Projects/wl-harness`：私有仓库 git clone（flake 输入 wl-harness 依赖）
-3. `~/Projects/lmclient-nix`：本地 flake（flake 输入 lmclient 依赖，含 AppImage 源）。
-   **不在 git 里**（含 64MB AppImage + 图标 + flake），无法 clone，
-   换机必须从备份还原到该绝对路径（与 flake.nix 的 `path:` 输入一致）
+3. 龙猫云_Lite（lmclient）：**临时代理客户端，已不进 flake**，无需随仓库
+   迁移。要用时装到 PATH 或 `~/.local/bin`，`home/hyprland.nix` 的 launcher
+   自动发现并启动，没装就干净跳过（不影响 rebuild 或会话）
 4. 新机生成 `hosts/nixos/hardware-configuration.nix`
    （`nixos-generate-config` 后替换）；**显示器名不同**的改
    `home/hyprland/noctalia-config.toml` 与 `hypr/lua/monitors.lua` 里的

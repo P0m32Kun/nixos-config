@@ -21,23 +21,6 @@
         "type": "github"
       }
     },
-    "lmclient": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1786502566,
-        "narHash": "sha256-MJfunViQFm5I5/GyQPDkM1rhlyKajmrO/9rqIKJLcVM=",
-        "path": "/home/kun/Projects/lmclient-nix",
-        "type": "path"
-      },
-      "original": {
-        "path": "/home/kun/Projects/lmclient-nix",
-        "type": "path"
-      }
-    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1791883866,
@@ -90,7 +73,6 @@
     "root": {
       "inputs": {
         "home-manager": "home-manager",
-        "lmclient": "lmclient",
         "nixpkgs": "nixpkgs",
         "noctalia": "noctalia",
         "wl-harness": "wl-harness"
