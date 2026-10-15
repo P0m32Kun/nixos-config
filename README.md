@@ -28,15 +28,18 @@ nixos-config/
 │   ├── hyprland.nix             #   Hyprland dotfiles + noctalia/lmclient 服务
 │   ├── apps.nix                 #   Alacritty / Helix / Fish / Yazi / uv / Obsidian
 │   ├── wl-harness.nix           #   wl-harness 共享 agent 层（见 decisions/0004）
-│   └── agent-usage.nix          #   agent token 用量监测（采集 + 15 分钟 timer）
+│   ├── agent-usage.nix          #   agent token 用量监测（采集 + 15 分钟 timer）
+│   ├── sysops.nix               #   系统运维助手（见 decisions/0007）
+│   └── noctalia-plugins.nix     #   noctalia 插件启用重申（换机可复现）
 ├── overlays/                    # 不在 nixpkgs 的自定义包
 │   ├── pi-tools.nix             #   codegraph（autoPatchelf）
 │   ├── wechat.nix               #   微信（src 换官方 CDN）
 │   ├── zcode.nix / orca.nix / grok-bot.nix   # AI 桌面客户端（AppImage）
 ├── scripts/
 │   ├── update.sh                # 慢层 overlay 包升级（orca/zcode/grok-bot）
-│   └── check.sh                 # nixfmt + dry 构建冒烟
-├── docs/decisions/              # 决策记录（ADR 0001-0006）
+│   ├── check.sh                 # nixfmt + dry 构建冒烟
+│   └── install-from-clone.sh    # 换机一键引导（校验前置 + rebuild）
+├── docs/decisions/              # 决策记录（ADR 0001-0008）
 └── .github/workflows/ci.yml     # push 格式检查 + 每周自动刷新远端输入开 PR
 ```
 
@@ -85,12 +88,31 @@ sudo nixos-rebuild switch --rollback
 
 ## 换机/重装
 
-flake 依赖两个**本地路径输入**，换机前先就位（详见 AGENTS.md 的清单）：
+flake 依赖两个**本地路径输入**，换机前先就位（详见 AGENTS.md 的清单）。
+
+**一键引导**（幂等，自动校验前置 + 建符号链接 + check.sh + rebuild）：
+
+```bash
+./scripts/install-from-clone.sh            # 完整流程
+./scripts/install-from-clone.sh --dry-run  # 只看会做什么
+```
+
+分条（脚本不代办凭据与快层安装）：
 
 1. clone 本仓库（如 `~/nixos-config`），并建符号链接
    `sudo ln -sfn ~/nixos-config /etc/nixos`（fish 的 `rebuild`/`update`
    别名与本文档所有命令都走 `/etc/nixos`；本机即此布局）
 2. `~/Projects/wl-harness`（私有）与 `~/Projects/lmclient-nix` 两个目录就位
+   （lmclient-nix **不在 git**，含 64MB AppImage，须从备份还原到该绝对路径）
 3. `sudo nixos-generate-config --show-hardware-config > /etc/nixos/hosts/<主机名>/hardware-configuration.nix`
 4. `sudo NIX_CONFIG='experimental-features = nix-command flakes' nixos-rebuild switch --flake /etc/nixos#<主机名>`
-5. 快层重装（`npm i -g` pi 全家桶、`uv tool install hermes-agent`）与密钥恢复
+5. 快层重装（`npm i -g` pi 全家桶、hermes 官方 `install.sh`——**勿用 PyPI 渠道**
+   已停更、agy 官方脚本、herdr 官方 installer）与密钥恢复
+6. agent 自检补齐（插件 / MCP / hermes external_dirs）：
+
+```bash
+~/Projects/wl-harness/scripts/agent-check.sh all --install
+# 每个 agent 的自检清单：~/Projects/wl-harness/shared/agents/checklists/
+```
+
+配置归属边界（哪些能迁移、哪些只能备份）见 `docs/decisions/0008`。

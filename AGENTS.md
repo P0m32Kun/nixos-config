@@ -31,6 +31,9 @@
 - 新增用户级软件/配置：在 `home/default.nix` 的 `imports` 里注册
 - 密钥类（`~/.pi/agent/auth.json`、`~/.hermes/`、tailscale 认证）**不进**
   nix store，保持命令式管理
+- **配置迁移边界（见 decisions/0008）**：nixos-config 管系统；wl-harness 管
+  快层与 agent/AI 工具的 baseline 配置（add-only seed + 自检清单 + 
+  `agent-check.sh`）。工具本体下载可脚本化，配置必须可迁移；凭据永不入库。
 
 ## 版本锁定与升级
 
@@ -50,6 +53,7 @@ flake.nix                     # 输入 + nixosSystem（home-manager、overlays�
 overlays/                     # 不在 nixpkgs 的自定义包（codegraph/wechat/zcode/orca/grok-bot）
 scripts/update.sh             # 慢层 overlay 包升级（orca/zcode/grok-bot）
 scripts/check.sh              # nixfmt + dry 构建冒烟
+scripts/install-from-clone.sh # 换机一键引导（校验前置 + check.sh + rebuild）
 modules/                      # 系统级 NixOS 模块
   desktop/hyprland.nix        #   Hyprland 桌面（SDDM/fcitx5/字体/portal）
   mirrors.nix                 #   TUNA substituters + nix-daemon 代理 env
@@ -60,8 +64,9 @@ home/
   apps.nix                    # Alacritty / Helix / Fish / Yazi / uv / Obsidian
   wl-harness.nix              # wl-harness 共享 agent 层（skills + MCP 合并，见 0004）
   agent-usage.nix             # agent token 用量监测（采集 + timer + agent-usage 命令）
+  noctalia-plugins.nix        # noctalia 插件启用重申（换机可复现，幂等）
 hosts/nixos/                  # 本机配置（单机）
-docs/decisions/               # ADR（0001-0006）
+docs/decisions/               # ADR（0001-0008）
 ```
 
 ## 桌面（Hyprland）约定
@@ -75,19 +80,27 @@ docs/decisions/               # ADR（0001-0006）
 
 ## 换机/重装清单（flake 本地输入与快层依赖）
 
+> **一键引导**：`./scripts/install-from-clone.sh`（幂等）自动做下面 1–5 步的
+> 校验、建符号链接、`check.sh` 与 rebuild；前置不满足会阻塞并说清缺什么。
+> 下面分条仍是权威清单（脚本不代办凭据与快层安装）。
+
 1. clone 本仓库（GitHub: P0m32Kun/nixos-config，如 `~/nixos-config`），并建
    符号链接 `sudo ln -sfn ~/nixos-config /etc/nixos`（fish 的 `rebuild`/`update`
    别名与本文档命令都走 `/etc/nixos`；本机即此布局）
 2. `~/Projects/wl-harness`：私有仓库 git clone（flake 输入 wl-harness 依赖）
-3. `~/Projects/lmclient-nix`：本地 flake（flake 输入 lmclient 依赖，含 AppImage 源）
+3. `~/Projects/lmclient-nix`：本地 flake（flake 输入 lmclient 依赖，含 AppImage 源）。
+   **不在 git 里**（含 64MB AppImage + 图标 + flake），无法 clone，
+   换机必须从备份还原到该绝对路径（与 flake.nix 的 `path:` 输入一致）
 4. 新机生成 `hosts/nixos/hardware-configuration.nix`
    （`nixos-generate-config` 后替换）；**显示器名不同**的改
    `home/hyprland/noctalia-config.toml` 与 `hypr/lua/monitors.lua` 里的
    `eDP-1`；N 卡机器另需动 `modules/desktop/hyprland.nix` 的 Intel 驱动段
-5. 首次 rebuild 并登录后，启用 noctalia 插件一次：
-   `noctalia msg plugins enable kun/agent-usage`、`noctalia msg plugins enable
-   kun/sysops`（插件文件由 home-manager seed 自动就位，但启用状态是
-   imperative 的，存 `~/.local/state/noctalia/settings.toml`）
+5. noctalia 插件启用：**已自动化**——`home/noctalia-plugins.nix` 每次登录
+   用 systemd user oneshot 幂等重申（`After=noctalia.service`，因为
+   `noctalia msg plugins enable` 走 IPC 且异步导出，需运行中实例）。新插件
+   在该文件的 `plugins` 列表登记即可。异常时手工兜底：
+   `noctalia msg plugins enable kun/agent-usage`、`kun/sysops`
+   （启用状态是 imperative 的，存 `~/.local/state/noctalia/settings.toml`）
 6. sysops 运维助手运行时初始化（见 decisions/0007）：建 hermes sysops
    profile（`hermes profile create sysops --clone` + alias）；启用 webhook
    平台并 `hermes gateway install --start-now --start-on-login`；两个订阅
@@ -102,10 +115,15 @@ docs/decisions/               # ADR（0001-0006）
    fish 解析报错、找不到 sysops-ctl/rg）
 7. 快层重装：`npm i -g` pi 全家桶、hermes 官方 `install.sh`（见
    https://hermes-agent.nousresearch.com ，**勿用 PyPI 渠道**，已停更）、
-   agy 官方脚本、herdr 官方 installer（https://herdr.dev/install）；
-   hermes 装完把 `~/.hermes/config.yaml` 的 `skills.external_dirs` 指到
-   `${HOME}/.agents/skills`（hermes 默认不读共享技能目录，这是接入点；
-   `hermes skills list` 里 source=external 即生效）
+   agy 官方脚本、herdr 官方 installer（https://herdr.dev/install）。
+   装完跑 **agent 自检补齐**（插件 / MCP / hermes `external_dirs` 等
+   无 secret 基线，add-only、改前备份 `*.wl-harness.bak`）：
+   `~/Projects/wl-harness/scripts/agent-check.sh all --install`
+   每个 agent 的自检清单在 `~/Projects/wl-harness/shared/agents/checklists/`
+   （agent 可直接读取自助补齐）。其中 hermes 的 `skills.external_dirs` 指到
+   `${HOME}/.agents/skills` 已由 wl-harness 模块在 rebuild 时自动 seed
+   （hermes 默认不读共享技能目录，这是接入点；`hermes skills list` 里
+   source=external 即生效），自检脚本只是兜底复核。
 8. 备份恢复（重装不丢的命令式状态）：`~/.pi/agent/auth.json`、`~/.hermes/`
    （整目录：含 `skills/` 自写技能库如 noctalia-plugins、`state.db` 会话与
    用量数据）、`~/.local/state/agent-usage/`（面板偏好 `panel-config.json` +
