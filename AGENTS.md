@@ -106,4 +106,8 @@ docs/decisions/               # ADR（0001-0006）
    hermes 装完把 `~/.hermes/config.yaml` 的 `skills.external_dirs` 指到
    `${HOME}/.agents/skills`（hermes 默认不读共享技能目录，这是接入点；
    `hermes skills list` 里 source=external 即生效）
-8. 密钥恢复：`~/.pi/agent/auth.json`、`~/.hermes/`、SSH keys、tailscale 认证
+8. 备份恢复（重装不丢的命令式状态）：`~/.pi/agent/auth.json`、`~/.hermes/`
+   （整目录：含 `skills/` 自写技能库如 noctalia-plugins、`state.db` 会话与
+   用量数据）、`~/.local/state/agent-usage/`（面板偏好 `panel-config.json` +
+   用量账本 `hermes-ledger.json`——账本含按天归属，丢了只能按 first_seen
+   近似重建）、SSH keys、tailscale 认证
