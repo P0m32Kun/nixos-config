@@ -63,5 +63,6 @@
     ./apps.nix # Alacritty / Helix / Fish / Yazi / uv / Obsidian
     ./wl-harness.nix # wl-harness 共享 agent 层（skills + codegraph MCP，见 decisions/0004）
     ./agent-usage.nix # agent 用量监测：采集 + 定时器 + agent-usage 报告命令
+    ./sysops.nix # 系统运维助手：体检采集 + noctalia 对话入口 + 审批执行流（见 decisions/0007）
   ];
 }

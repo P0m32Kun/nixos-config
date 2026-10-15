@@ -85,13 +85,25 @@ docs/decisions/               # ADR（0001-0006）
    `home/hyprland/noctalia-config.toml` 与 `hypr/lua/monitors.lua` 里的
    `eDP-1`；N 卡机器另需动 `modules/desktop/hyprland.nix` 的 Intel 驱动段
 5. 首次 rebuild 并登录后，启用 noctalia 插件一次：
-   `noctalia msg plugins enable kun/agent-usage`（插件文件由
-   home-manager seed 自动就位，但启用状态是 imperative 的，存
-   `~/.local/state/noctalia/settings.toml`）
-6. 快层重装：`npm i -g` pi 全家桶、hermes 官方 `install.sh`（见
+   `noctalia msg plugins enable kun/agent-usage`、`noctalia msg plugins enable
+   kun/sysops`（插件文件由 home-manager seed 自动就位，但启用状态是
+   imperative 的，存 `~/.local/state/noctalia/settings.toml`）
+6. sysops 运维助手运行时初始化（见 decisions/0007）：建 hermes sysops
+   profile（`hermes profile create sysops --clone` + alias）；启用 webhook
+   平台并 `hermes gateway install --start-now --start-on-login`；两个订阅
+   （sysops-execute / sysops-diagnose，`--route-profile sysops`）；HMAC secret
+   写 `~/.local/state/sysops/webhook.env`（0600，SYSOPS_WEBHOOK_URL /
+   SYSOPS_WEBHOOK_SECRET）。三个易漏点：①订阅 prompt 用**根级引用**
+   （`{proposal_id}`），`{payload.x}` 不替换；②`webhook_subscriptions.json`
+   两个路由手工补 `"toolsets": ["terminal", "file"]`（webhook 默认 web 类
+   工具，无法执行）；③gateway 执行环境 drop-in
+   `~/.config/systemd/user/hermes-gateway.service.d/override.conf`：SHELL=bash
+   + 含 `/etc/profiles/per-user/kun/bin` 的 PATH（否则 terminal 包装器被
+   fish 解析报错、找不到 sysops-ctl/rg）
+7. 快层重装：`npm i -g` pi 全家桶、hermes 官方 `install.sh`（见
    https://hermes-agent.nousresearch.com ，**勿用 PyPI 渠道**，已停更）、
    agy 官方脚本、herdr 官方 installer（https://herdr.dev/install）；
    hermes 装完把 `~/.hermes/config.yaml` 的 `skills.external_dirs` 指到
    `${HOME}/.agents/skills`（hermes 默认不读共享技能目录，这是接入点；
    `hermes skills list` 里 source=external 即生效）
-7. 密钥恢复：`~/.pi/agent/auth.json`、`~/.hermes/`、SSH keys、tailscale 认证
+8. 密钥恢复：`~/.pi/agent/auth.json`、`~/.hermes/`、SSH keys、tailscale 认证

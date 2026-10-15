@@ -1,0 +1,37 @@
+# 系统运维助手入口（noctalia 插件）
+# 数据源：~/.local/state/sysops/report.json + queue.json（sysops-ctl 的
+# collect/timer 与 hermes 执行器写入，插件只读不算；动作全部回 sysops-ctl）。
+# 开发：改 .luau 热重载；改本清单需重载配置。
+# 面板：`noctalia msg panel-toggle kun/sysops:ops`
+# 架构见 docs/decisions/0007-hermes-ops-assistant.md
+
+id = "kun/sysops"
+name = "SysOps"
+version = "1.0.0"
+plugin_api = 31
+author = "kun"
+description = "系统运维助手：体检状态灯、问题修复、待审批框（对接 hermes sysops profile）"
+
+[[widget]]
+id = "status"
+entry = "widget.luau"
+
+  [[widget.setting]]
+  key = "glyph"
+  type = "glyph"
+  label_key = "settings.glyph.label"
+  default = "activity"
+
+[[panel]]
+id = "ops"
+entry = "panel.luau"
+width = 560
+height = "fill" # 铺满桌面高度（floating 专属能力）；左侧滑出
+placement = "floating"
+position = "center_left" # reveal 方向 Right：从左边缘滑入
+
+  [[panel.setting]]
+  key = "sysops_bin"
+  type = "string"
+  label_key = "settings.sysops_bin.label"
+  default = "/etc/profiles/per-user/kun/bin/sysops-ctl"
