@@ -79,6 +79,26 @@
     "vm.dirty_bytes" = 209715200; # 200MB：硬上限，触线即同步限流
   };
 
+  # ============ conntrack 表上限 ============
+  # 2026-10-12 08 时段 20 条 "nf_conntrack: table full, dropping packet"：
+  # 内核按内存自动的 262144 被突发连接打满开始丢包。翻倍到 524288
+  # （常驻多占内存可忽略，仅表项实际增长时占用）。
+  boot.kernel.sysctl."net.netfilter.nf_conntrack_max" = 524288;
+
+  # ============ Btrfs 月度数据巡检 ============
+  # 预防静默坏块（数据损坏往往发现得太晚）。每月一次只读巡检 +
+  # 自动修复已知坏块，I/O 影响可忽略。
+  services.btrfs.autoScrub = {
+    enable = true;
+    interval = "monthly";
+    fileSystems = [ "/" ];
+  };
+
+  # ============ D-Bus 重复服务名日志过滤 ============
+  # NixOS 打包重复提供同名 system service，每次启动刷 ~141 行
+  # "Ignoring duplicate name"（确定性无害噪声）。只过滤这一条模式。
+  systemd.services.dbus-broker.serviceConfig.LogFilterPatterns = [ "~Ignoring duplicate name" ];
+
   # ============ 回滚记录保留策略 ============
   # 只保留最近 10 个 system generation（`nixos-rebuild --rollback` 的回滚点）。
   # generation 是 GC root：每多一代，/nix/store 就多一份完整系统快照，

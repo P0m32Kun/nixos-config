@@ -27,13 +27,13 @@ final: prev:
 let
   inherit (prev) appimageTools;
 
-  version = "3.11.2";
+  version = "3.15.3";
 
   # 官方 CDN 直链（国内可直连，实测 200）。URL 由 version 推出，
   # 故升级脚本只需改本文件的 version + hash 两处。
   src = prev.fetchurl {
     url = "https://cdn-zcode.z.ai/zcode/electron/releases/${version}/linux-x64/ZCode-${version}-linux-x64.AppImage";
-    hash = "sha256-/EzIUShqQOqAkM6/qsGp+b3ETqs0njbu8NOzIZ85MD8=";
+    hash = "sha256-Ltx5ZQ/P9yNYZwr0/7+/fZebqVR2YRqArRFR1XfpD+M=";
   };
 
   appimageContents = appimageTools.extractType2 {

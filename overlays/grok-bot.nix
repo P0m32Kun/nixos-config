@@ -27,13 +27,13 @@ final: prev:
 let
   inherit (prev) appimageTools;
 
-  version = "0.68.1";
-  commit = "33103062f95061ccf9c81c5b365d37ab152c3b66";
+  version = "0.70.2";
+  commit = "52da656f56d317510ca65ad6af3d69a2cde461e0";
 
   # 下载走 nix-daemon 的代理 env（见 docs/decisions/0002）。
   src = prev.fetchurl {
     url = "https://downloads.cursor.com/grokbot/stable/${commit}/linux/x64/Grok_Bot_${version}.AppImage";
-    hash = "sha256-L+fFrOzM1VehM7DGGSmX7AwTIPHp/Hvv/MprXozvuls=";
+    hash = "sha256-Y/7sjAuZdsslKJsTpchZjNuIK6nvLSks6ZDMQntGouA=";
   };
 
   appimageContents = appimageTools.extractType2 {
