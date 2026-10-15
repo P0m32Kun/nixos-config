@@ -13,6 +13,17 @@ local CONFIG_PATH = "~/.local/state/agent-usage/panel-config.json"
 local AGENTS = { "zcode", "pi", "codex", "hermes" }
 local DRAG_TYPE = "agent-card"
 
+-- 主题色 → 不透明 hex。实测 fill 的坑：`角色/alpha` 后缀与 8 位 hex 都被
+-- 静默忽略（面板透出壁纸），只有纯角色名或 6 位 hex 会真正涂色——
+-- noctalia.getColor 返回的正是 6 位 #RRGGBB，原样使用即为实心。
+local function opaque(role, fallback)
+  local hex = noctalia.getColor(role)
+  if type(hex) == "string" and #hex >= 7 then
+    return hex:sub(1, 7)
+  end
+  return fallback
+end
+
 -- 格式化工具必须定义在 STAT_DEFS 之前（词法作用域，靠后声明闭包会捕获 nil）
 local function fmt(n)
   if n >= 1e9 then
@@ -278,7 +289,7 @@ local function agentCard(name, r)
       table.insert(children, ui.graph({ values = line, width = 400, height = 36, color = "primary" }))
     end
   end
-  return ui.column({ gap = 10, fill = "surface", radius = 10, padding = 12 }, children)
+  return ui.column({ gap = 10, fill = opaque("surface_variant", "#2c2c3a"), radius = 10, padding = 12 }, children)
 end
 
 -- ============ 设置页 ============
@@ -354,9 +365,9 @@ local function settingsView()
 
   return ui.column({ gap = 12, flexGrow = 1 }, {
     sectionTitle("显示哪些 Agent"),
-    ui.column({ gap = 6, fill = "surface", radius = 10, padding = 12 }, agentToggles),
+    ui.column({ gap = 6, fill = opaque("surface_variant", "#2c2c3a"), radius = 10, padding = 12 }, agentToggles),
     sectionTitle("卡片统计项"),
-    ui.column({ gap = 6, fill = "surface", radius = 10, padding = 12 }, statToggles),
+    ui.column({ gap = 6, fill = opaque("surface_variant", "#2c2c3a"), radius = 10, padding = 12 }, statToggles),
     ui.label({
       text = "顺序：回到展示页拖动卡片左侧把手调整",
       fontSize = 10,
@@ -397,7 +408,7 @@ function render()
     })
   end
 
-  panel.render(ui.column({ flexGrow = 1, gap = 12 }, {
+  panel.render(ui.column({ flexGrow = 1, gap = 12, fill = opaque("surface", "#1e1e2e"), radius = 16, padding = 14 }, {
     ui.row({ align = "center", justify = "space_between", gap = 8 }, {
       ui.label({
         text = inSettings and "Agent 用量 · 设置" or "Agent 用量",

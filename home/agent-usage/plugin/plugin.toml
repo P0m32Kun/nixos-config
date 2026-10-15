@@ -7,7 +7,7 @@
 id = "kun/agent-usage"
 name = "Agent Usage"
 version = "1.0.0"
-plugin_api = 26
+plugin_api = 31
 author = "kun"
 description = "本地 AI harness 的 token 用量（zcode/pi/codex/hermes），读 agent-usage 采集层"
 
@@ -25,6 +25,6 @@ entry = "widget.luau"
 id = "detail"
 entry = "panel.luau"
 width = 480
-height = 560
+height = "fill" # 铺满桌面高度（floating 专属能力）；左侧滑出
 placement = "floating"
-position = "center"
+position = "center_left" # reveal 方向 Right：从左边缘滑入
