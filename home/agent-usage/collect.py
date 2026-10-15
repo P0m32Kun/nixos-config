@@ -14,8 +14,11 @@
 - codex : ~/.codex/sessions/**/*.jsonl（本机暂未使用，按标准 rollout
           格式尽力解析：token_count 事件是会话累计值，取每文件最后一条，
           按天聚合是会话粒度的近似——记录里以 granularity 标明）。
-- hermes: 未在本地持久化 token 用量（logs 无 token 字段），标记
-          available=false，报告里明说而不是静默缺失。
+- hermes: ~/.hermes/state.db + ~/.hermes/profiles/*/state.db 的
+          session_model_usage（会话×模型累计值，无按天拆分）→ 增量快照
+          按天记账（账本 ~/.local/state/agent-usage/hermes-ledger.json）：
+          每次采集把「当前累计 − 上次快照」的差值记到采集当天，跨天会话
+          的用量按天正确拆分；无快照的存量行按 first_seen 一次性落账。
 
 用法：collect.py [agent ...]   # 缺省全部；失败 agent 退出码非零
 """
@@ -133,9 +136,11 @@ def summarize(rows, extra=None):
             add_into(out["week"], r["usage"], r.get("cost"), reqs, cc)
         if r["date"].startswith(month_prefix):
             add_into(out["month"], r["usage"], r.get("cost"), reqs, cc)
-    for d, b in sorted(days.items(), reverse=True):
-        if in_days(d, 30):
-            out["by_day"].append({"date": d, **b})
+    # by_day 零填充满 30 天窗口（无用量天=0）：曲线点数恒定（noctalia 的
+    # ui.graph <4 个点不涂色），空档如实显示而不是画成连续使用
+    for i in range(30):
+        d = (dt.date.today() - dt.timedelta(days=i)).isoformat()
+        out["by_day"].append({"date": d, **days.get(d, new_bucket())})
     out["today"] = days.get(today, new_bucket())
     out["by_model"] = [
         {"model": k, **v} for k, v in sorted(out["by_model"].items(), key=lambda kv: -kv[1]["input"])
@@ -323,48 +328,122 @@ def collect_codex():
 
 # ---------------- hermes ----------------
 
+# v0.22+（官方 install.sh 渠道）：~/.hermes/state.db 与
+# ~/.hermes/profiles/*/state.db 各有一份 session_model_usage，按
+# session×model 聚合、只存累计值（无按天拆分）。因此采用增量快照按天记账：
+# 账本 hermes-ledger.json 存 {snapshot: {行键: 累计计数},
+#   rows: [{date, model, session, usage, requests, cost}]}；
+# 每次采集把「当前累计 − 快照」的差值记到采集当天（跨天会话按天正确拆分）
+# 并回写快照；无快照的行（首次部署/新建行）按行 first_seen 一次性落账
+# （存量总量守恒，历史精度到行）。计数回退（会话重置）时以当前值为增量。
+
+LEDGER_FILE = STATE_DIR / "hermes-ledger.json"
+
+# 库列名 → summarize 的 usage 键
+_HERMES_COUNTERS = {
+    "input_tokens": "input",
+    "output_tokens": "output",
+    "cache_read_tokens": "cache_read",
+    "cache_write_tokens": "cache_write",
+    "reasoning_tokens": "reasoning",
+}
+
+
+def _hermes_dbs():
+    dbs = [HOME / ".hermes" / "state.db"]
+    profile_dir = HOME / ".hermes" / "profiles"
+    if profile_dir.exists():
+        dbs.extend(sorted(profile_dir.glob("*/state.db")))
+    return [d for d in dbs if d.exists()]
+
+
+def _hermes_profile_of(db: Path) -> str:
+    parts = db.relative_to(HOME / ".hermes").parts
+    if parts[0] == "profiles" and len(parts) >= 3:
+        return parts[1]
+    return "default"
+
+
+def _hermes_ledger_load():
+    if LEDGER_FILE.exists():
+        try:
+            d = json.loads(LEDGER_FILE.read_text())
+            if isinstance(d, dict):
+                return {"snapshot": d.get("snapshot") or {}, "rows": d.get("rows") or []}
+        except (json.JSONDecodeError, OSError):
+            pass
+    return {"snapshot": {}, "rows": []}
+
+
 def collect_hermes():
-    # v0.22+（官方 install.sh 渠道）：~/.hermes/state.db 的
-    # session_model_usage 表按 session×model 聚合，含
-    # api_call_count 与 estimated_cost_usd；日期归属用 sessions.started_at
-    db = HOME / ".hermes/state.db"
-    if not db.exists():
-        return {**base_record("hermes", str(db)), "available": False,
-                "reason": f"未找到 {db}（hermes 尚未使用官方渠道安装/使用）"}
-    con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
-    con.row_factory = sqlite3.Row
-    rows = []
-    for r in con.execute(
-        """
-        SELECT u.session_id, u.model, u.input_tokens, u.output_tokens,
-               u.cache_read_tokens, u.cache_write_tokens, u.reasoning_tokens,
-               u.api_call_count, u.estimated_cost_usd, s.started_at
-        FROM session_model_usage u
-        LEFT JOIN sessions s ON s.id = u.session_id
-        """
-    ):
-        ts = r["started_at"] or 0
-        date = (
-            dt.datetime.fromtimestamp(float(ts)).date().isoformat()
-            if ts
-            else r["session_id"][:4] + "-" + r["session_id"][4:6] + "-" + r["session_id"][6:8]
-        )
-        rows.append({
-            "date": date,
-            "model": r["model"],
-            "session": r["session_id"],
-            "usage": {
-                "input": r["input_tokens"] or 0,
-                "output": r["output_tokens"] or 0,
-                "cache_read": r["cache_read_tokens"] or 0,
-                "cache_write": r["cache_write_tokens"] or 0,
-                "reasoning": r["reasoning_tokens"] or 0,
-            },
-            "cost": r["estimated_cost_usd"] or None,
-            "requests": r["api_call_count"] or 1,
-        })
-    con.close()
-    return {**base_record("hermes", f"{db}:session_model_usage"), **summarize(rows),
+    dbs = _hermes_dbs()
+    if not dbs:
+        return {**base_record("hermes", str(HOME / ".hermes" / "state.db")), "available": False,
+                "reason": f"未找到 {HOME / '.hermes' / 'state.db'}（hermes 尚未使用官方渠道安装/使用）"}
+    ledger = _hermes_ledger_load()
+    snap, rows = ledger["snapshot"], ledger["rows"]
+    today = today_str()
+
+    def add(date, session, model, usage, requests, cost):
+        for r in rows:
+            if r["date"] == date and r["session"] == session and r["model"] == model:
+                for k in TOKEN_KEYS:
+                    r["usage"][k] += usage.get(k, 0)
+                r["requests"] += requests
+                if cost:
+                    r["cost"] += cost
+                return
+        rows.append({"date": date, "model": model, "session": session,
+                     "usage": usage, "requests": requests, "cost": cost})
+
+    for db in dbs:
+        profile = _hermes_profile_of(db)
+        con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+        con.row_factory = sqlite3.Row
+        for r in con.execute(
+            """
+            SELECT u.session_id, u.model, u.billing_provider, u.billing_base_url,
+                   u.billing_mode, u.task, u.input_tokens, u.output_tokens,
+                   u.cache_read_tokens, u.cache_write_tokens, u.reasoning_tokens,
+                   u.api_call_count, u.estimated_cost_usd, u.first_seen, s.started_at
+            FROM session_model_usage u
+            LEFT JOIN sessions s ON s.id = u.session_id
+            """
+        ):
+            key = "|".join((profile, r["session_id"], r["model"], r["billing_provider"],
+                            r["billing_base_url"], r["billing_mode"], r["task"]))
+            cur = {c: (float(r[c] or 0) if c == "estimated_cost_usd" else int(r[c] or 0))
+                   for c in list(_HERMES_COUNTERS) + ["api_call_count", "estimated_cost_usd"]}
+            prev = snap.get(key)
+            if prev is None:
+                # 首见的行（存量/新建行）：按 first_seen 一次性落账
+                ts = r["first_seen"] or r["started_at"]
+                if ts:
+                    date = dt.datetime.fromtimestamp(float(ts)).date().isoformat()
+                else:
+                    sid = r["session_id"]
+                    date = f"{sid[:4]}-{sid[4:6]}-{sid[6:8]}"
+                usage = {out: cur[col] for col, out in _HERMES_COUNTERS.items()}
+                requests, cost = cur["api_call_count"], cur["estimated_cost_usd"]
+            else:
+                # 快照差值记到采集当天；计数回退（会话重置）以当前值为增量
+                delta = {c: (cur[c] - prev[c] if cur[c] >= prev[c] else cur[c]) for c in cur}
+                if not any(delta.values()):
+                    snap[key] = cur
+                    continue
+                usage = {out: delta[col] for col, out in _HERMES_COUNTERS.items()}
+                requests, cost = delta["api_call_count"], delta["estimated_cost_usd"]
+                date = today
+            add(date, f"{profile}:{r['session_id']}", r["model"], usage, requests, cost)
+            snap[key] = cur
+        con.close()
+    # 原子回写账本（快照 + 按天行）
+    LEDGER_FILE.parent.mkdir(parents=True, exist_ok=True)
+    tmp = LEDGER_FILE.with_suffix(".tmp")
+    tmp.write_text(json.dumps({"snapshot": snap, "rows": rows}, ensure_ascii=False))
+    os.replace(tmp, LEDGER_FILE)
+    sources = ", ".join(f"{d}:session_model_usage" for d in dbs)
+    return {**base_record("hermes", sources), **summarize(rows),
             "cost_note": f"hermes estimated_cost_usd × {USD_CNY} 折算"}
 
 

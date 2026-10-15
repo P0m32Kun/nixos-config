@@ -38,9 +38,12 @@ def load_records():
     records = []
     for p in sorted(STATE_DIR.glob("*.json")):
         try:
-            records.append(json.loads(p.read_text()))
+            d = json.loads(p.read_text())
         except (json.JSONDecodeError, OSError):
-            pass
+            continue
+        # 状态目录里还有 panel-config.json / hermes-ledger.json 等非 agent 记录
+        if isinstance(d, dict) and d.get("agent"):
+            records.append(d)
     return records
 
 
