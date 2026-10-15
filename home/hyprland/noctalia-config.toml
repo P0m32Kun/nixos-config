@@ -1,9 +1,9 @@
 [bar.default]
-center = [ "kun/agent-usage:usage", "usage_gap", "screenshot", "workspaces", "caffeine" ]
+center = [ "screenshot", "workspaces", "caffeine" ]
 end = [ "clock", "date", "tray", "notifications", "clipboard", "volume", "battery", "control-center", "session" ]
 margin_ends = 20
 scale = 1.2500000111758709
-start = [ "launcher", "wallpaper", "active_window", "audio_visualizer" ]
+start = [ "kun/agent-usage:usage", "kun/sysops:status", "usage_gap", "wallpaper", "active_window", "audio_visualizer" ]
 
 [location]
 auto_locate = true
@@ -52,8 +52,8 @@ directory = "/home/kun/Pictures/Wallpapers"
 [wallpaper.monitors.eDP-1]
 path = "/home/kun/Pictures/Wallpapers/bluehour.jpg"
 
-# 用量组件与截图组件之间的固定间距（spacer 长 18px，
-# 默认 widget_spacing=6 显得太贴）
+# 顶栏最左「用量/助手」图标与壁纸/窗口标题之间的固定间距
+# （spacer 长 18px，默认 widget_spacing=6 显得太贴）
 [widget.usage_gap]
 type = "spacer"
 length = 18

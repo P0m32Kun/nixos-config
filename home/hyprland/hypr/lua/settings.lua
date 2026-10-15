@@ -48,6 +48,10 @@ hl.config({
   misc = {
     force_default_wallpaper = -1,
     disable_hyprland_logo = true,
+    -- monitors.lua 的 scale=1.75 不是 3120x2080 的整除缩放值，Hyprland 每次套用
+    -- monitor 规则都会自动修正为 1.7333 并弹红色警告（开机套用多次就弹多次）。
+    -- float32 存储导致精确值也过不了校验，故只关弹窗，自动修正行为保留。
+    disable_scale_notification = true,
   },
 })
 
