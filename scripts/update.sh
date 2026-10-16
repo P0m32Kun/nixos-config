@@ -11,7 +11,8 @@
 # 行为：
 #   - 每项独立执行，单项失败不中断其余，末尾输出汇总表；
 #     任一失败退出码非零。
-#   - 下载走 nix-daemon 的代理 env（见 docs/decisions/0002）。
+#   - 下载默认直连（2026-10-16 移除 nix-daemon 代理 env；需要代理时见
+#     modules/mirrors.nix 注释，机制见 decisions/0002）。
 #   - 更新成功后：sudo nixos-rebuild switch --flake /etc/nixos
 # ============================================================
 set -euo pipefail

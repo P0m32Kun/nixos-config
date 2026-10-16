@@ -30,7 +30,7 @@ let
   version = "0.70.2";
   commit = "52da656f56d317510ca65ad6af3d69a2cde461e0";
 
-  # 下载走 nix-daemon 的代理 env（见 docs/decisions/0002）。
+  # 下载默认直连（代理可选，见 modules/mirrors.nix 注释；机制见 docs/decisions/0002）。
   src = prev.fetchurl {
     url = "https://downloads.cursor.com/grokbot/stable/${commit}/linux/x64/Grok_Bot_${version}.AppImage";
     hash = "sha256-Y/7sjAuZdsslKJsTpchZjNuIK6nvLSks6ZDMQntGouA=";

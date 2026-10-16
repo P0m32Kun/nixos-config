@@ -15,7 +15,7 @@ nixos-config/
 │   └── hardware-configuration.nix  # 硬件配置（生成，勿手改）
 ├── modules/                     # 系统级 NixOS 模块
 │   ├── base.nix                 #   时区 / 中文 / SSH / 代际清理
-│   ├── mirrors.nix              #   TUNA substituters + nix-daemon 代理 env
+│   ├── mirrors.nix              #   TUNA substituters（默认直连，代理块已移除）
 │   ├── packages.nix             #   系统软件包 + 允许 unfree
 │   ├── virtualization.nix       #   libvirt / Podman（国内镜像链）
 │   ├── desktop/                 #   Hyprland 桌面 / PipeWire 音频
@@ -54,7 +54,7 @@ nixos-config/
 # 本机重建/升级
 sudo nixos-rebuild switch --flake /etc/nixos
 
-# 更新 nixpkgs 等输入到最新（GitHub git 协议，锁真实 commit；需代理在线）
+# 更新 nixpkgs 等输入到最新（GitHub git 协议，锁真实 commit；默认直连）
 cd /etc/nixos && nix flake update nixpkgs
 sudo nixos-rebuild switch --flake /etc/nixos
 # （远端输入 nixpkgs / home-manager / noctalia 每周有 CI 自动 PR）
@@ -79,13 +79,13 @@ sudo nixos-rebuild switch --rollback
 - **nixpkgs 源**：`flake.nix` 使用 GitHub 的 **git 协议 shallow 克隆**
   `git+https://github.com/NixOS/nixpkgs.git?ref=nixos-26.05&shallow=1`
   （锁真实 commit，杜绝 channel tarball 的假时间戳锁漂移，见 decisions/0005；
-  需代理在线。不用 `github:` 简写是避开 REST API 匿名限额 403；
-  TUNA git 镜像排队严重仅作无代理备选）
+  默认直连，网络不畅时用代理（见下）。不用 `github:` 简写是避开 REST API 匿名限额 403；
+  TUNA git 镜像排队严重仅作备选）
 - **二进制缓存**：`modules/mirrors.nix` 的 substituters 优先 TUNA store 镜像，
   官方兜底，另有 noctalia 官方 cachix
-- **nix-daemon 代理**：github.com 等下载走 `127.0.0.1:7892`（龙猫云_Lite，
-  临时代理客户端、不进 flake，见下）；无代理时删掉 `modules/mirrors.nix`
-  对应 block 即可
+- **网络**：默认直连（2026-10-16 起移除 nix-daemon 的代理 env）。需要代理时
+  （如 GitHub 拉不动）把 `modules/mirrors.nix` 注释里的代理变量加回，或在
+  shell 里 `proxy_on`（龙猫云_Lite，临时代理客户端、不进 flake，见下）
 
 ## 换机/重装
 

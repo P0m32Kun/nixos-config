@@ -38,17 +38,16 @@
     ];
   };
 
-  # ============ 网络代理（本机 127.0.0.1:7892） ============
-  # 让 nix-daemon 的下载（github tarball、PyPI、TUNA 镜像等）走代理。
+  # ============ 网络：默认直连 ============
+  # 2026-10-16 起移除 nix-daemon 的代理 env（127.0.0.1:7892，龙猫云_Lite）：
+  # 代理客户端未常驻时该端口无人监听，nix 的替代源查询/下载会全部失败
+  # （实测 TUNA 直连 200 OK）。需要走代理时（如 GitHub 拉不动）把代理变量
+  # 加回本 block 即可：
+  #   https_proxy/http_proxy = "http://127.0.0.1:7892"; all_proxy = ...;
+  #   no_proxy = "localhost,127.0.0.1";
   # 机制：fetchurl 把 proxy 变量与 NIX_CURL_FLAGS 声明为 impureEnvVars，
   #       nix 从 **daemon** 的环境取值注入构建沙箱（实测：客户端 env 无效）。
-  #       所以代理只需在这里配，不需要 overlay 包裹 fetchurl。
-  # 没有代理时删掉这个 block 即可。
   systemd.services.nix-daemon.environment = {
-    https_proxy = "http://127.0.0.1:7892";
-    http_proxy = "http://127.0.0.1:7892";
-    all_proxy = "http://127.0.0.1:7892";
-    no_proxy = "localhost,127.0.0.1";
     # 慢连接快速失败：fetchurl 的 curl 只有 --connect-timeout，没有速度超时，
     # 半死连接（实测 326 B/s）会无限挂起而不触发重试。持续 <1KB/s 达 60s 即中止，
     # 由 nix 的 download-attempts=5 重试（curl 侧 -C - 续传）。

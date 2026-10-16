@@ -97,11 +97,9 @@
       # 编辑器
       set -gx EDITOR nvim
       set -gx VISUAL nvim
-      # 代理（默认开启；proxy_off 关闭，proxy_on 重新开启）
-      set -gx http_proxy http://127.0.0.1:7892
-      set -gx https_proxy http://127.0.0.1:7892
-      set -gx all_proxy socks5://127.0.0.1:7892
-      set -gx no_proxy localhost,127.0.0.1,::1
+      # 代理（默认直连；proxy_on 开启，proxy_off 关闭。2026-10-16 起默认
+      # 不设代理：代理客户端未常驻时 127.0.0.1:7892 无人监听，会拖垮 curl/git）
+      set -e http_proxy https_proxy all_proxy no_proxy 2>/dev/null
     '';
     interactiveShellInit = lib.mkMerge [
       ''

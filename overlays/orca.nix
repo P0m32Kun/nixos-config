@@ -36,7 +36,7 @@ let
 
   # 官方 release 资产名固定为 orca-linux.AppImage（不含版本号），
   # 版本只体现在 tag 上，故 URL 完全由 version 推出。
-  # 下载走 nix-daemon 的代理 env（见 docs/decisions/0002）。
+  # 下载默认直连（代理可选，见 modules/mirrors.nix 注释；机制见 docs/decisions/0002）。
   src = prev.fetchurl {
     url = "https://github.com/stablyai/orca/releases/download/v${version}/orca-linux.AppImage";
     hash = "sha256-sf6RAtmH012X622cJ0qT2elRqtvoZPwiUaMVAj9gx0Y=";
