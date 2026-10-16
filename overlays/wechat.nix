@@ -11,6 +11,12 @@
 # pkgs/by-name/we/wechat/linux.nix 原样重建，仅 src 不同：
 # 现役 CDN 文件无 libtiff.so.5 依赖（readelf 实测），故省略上游的
 # patchelf 步骤。
+#
+# 2026-10-16 追加 fcitx5 兜底 wrapper：微信进程环境缺
+# GTK_IM_MODULE/QT_IM_MODULE/XMODIFIERS 时输入法不可用（从 noctalia
+# 启动的程序都不带这些变量，见 home/hyprland.nix 的 noctalia 服务）。
+# 与 home/packages.nix 里 WPS 的做法一致：symlinkJoin + makeWrapper 注入，
+# 不复制包体；wechat.desktop 的 Exec=wechat（走 PATH）无需改。
 # ============================================================
 final: prev:
 
@@ -25,9 +31,7 @@ let
     version = "4.1.1";
     inherit src;
   };
-in
-{
-  wechat = appimageTools.wrapAppImage {
+  wechat-unwrapped = appimageTools.wrapAppImage {
     pname = "wechat";
     version = "4.1.1";
     meta = prev.wechat.meta;
@@ -39,5 +43,24 @@ in
       cp ${appimageContents}/wechat.png $out/share/icons/hicolor/256x256/apps/
       substituteInPlace $out/share/applications/wechat.desktop --replace-fail AppRun wechat
     '';
+  };
+in
+{
+  wechat = prev.symlinkJoin {
+    name = "wechat-4.1.1-fcitx";
+    paths = [ wechat-unwrapped ];
+    nativeBuildInputs = [ prev.makeWrapper ];
+    postBuild = ''
+      if [ -L "$out/bin/wechat" ]; then
+        target=$(readlink -f "$out/bin/wechat")
+        rm "$out/bin/wechat"
+        makeWrapper "$target" "$out/bin/wechat" \
+          --set GTK_IM_MODULE fcitx \
+          --set QT_IM_MODULE fcitx \
+          --set XMODIFIERS "@im=fcitx" \
+          --set SDL_IM_MODULE fcitx
+      fi
+    '';
+    meta = wechat-unwrapped.meta;
   };
 }

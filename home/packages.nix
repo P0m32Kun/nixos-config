@@ -5,6 +5,39 @@
   ...
 }:
 
+let
+  # WPS Office（中文版）包层包装：
+  # 运行中的 wps/wpsoffice 进程不会继承 Hyprland 会话里设置的
+  # GTK_IM_MODULE/QT_IM_MODULE/XMODIFIERS，导致 fcitx5 无法在 WPS 中生效。
+  # 这里用 symlinkJoin + makeWrapper 注入环境变量，并把 .desktop 的 Exec
+  # 指向被包装后的二进制（不复制整个包体）。
+  wpsoffice-cn-wrapped = pkgs.symlinkJoin {
+    name = "wpsoffice-cn-fcitx";
+    paths = [ pkgs.wpsoffice-cn ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      for prog in wps wpp et wpspdf; do
+        if [ -L "$out/bin/$prog" ]; then
+          target=$(readlink "$out/bin/$prog")
+          rm "$out/bin/$prog"
+          makeWrapper "$target" "$out/bin/$prog" \
+            --set GTK_IM_MODULE fcitx \
+            --set QT_IM_MODULE fcitx \
+            --set XMODIFIERS "@im=fcitx" \
+            --set SDL_IM_MODULE fcitx
+        fi
+      done
+      for desktop in $out/share/applications/*.desktop; do
+        [ -e "$desktop" ] || continue
+        if [ -L "$desktop" ]; then
+          src=$(readlink -f "$desktop")
+          rm "$desktop"
+          sed "s|${pkgs.wpsoffice-cn}/bin|$out/bin|g" "$src" > "$desktop"
+        fi
+      done
+    '';
+  };
+in
 # ============================================================
 # 用户级软件包（慢层，nix 声明式）
 # 快慢分层原则见 docs/decisions/0001 + 0005：
@@ -36,7 +69,7 @@
     # ---- 通讯/会议（nixpkgs 现有包；unfree 已在 modules/packages.nix 允许）----
     wechat # 微信（官方 Linux 版）
     wemeet # 腾讯会议
-    wpsoffice-cn # WPS Office（中文版，原生中文界面；字体/输入法已就绪）
+    wpsoffice-cn-wrapped # WPS Office（中文版，原生中文界面；字体/输入法已就绪，包层注入 fcitx5 环境变量）
 
     # ---- 图形文件管理器（nixpkgs 现有包）----
     thunar # XFCE 文件管理器（GUI；Super+T 启动，见 hyprland 键位）

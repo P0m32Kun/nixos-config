@@ -264,6 +264,13 @@ in
       Environment = [
         "XDG_CURRENT_DESKTOP=Hyprland"
         "XDG_SESSION_TYPE=wayland"
+        # fcitx5 输入法环境变量：noctalia 是 systemd 用户服务，不继承
+        # Hyprland 里 hl.env 的变量；它启动的程序（微信/wemeet 等）需要
+        # 这些变量才能用 fcitx5（与 env.lua / WPS 包层 wrapper 同款）
+        "GTK_IM_MODULE=fcitx"
+        "QT_IM_MODULE=fcitx"
+        "XMODIFIERS=@im=fcitx"
+        "SDL_IM_MODULE=fcitx"
       ];
     };
     Install = {
